@@ -1,11 +1,13 @@
 # MatrixTableConsumer
 
 To compile Go modules with C types to work with Python run:
+
 ```bash
 go build -o functions.so -buildmode=c-shared functions/functions.go
 ```
 
 To install this package run:
+
 ```bash
 python setup.py install
 ```

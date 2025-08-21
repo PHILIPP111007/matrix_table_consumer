@@ -1,6 +1,7 @@
 import os
 import ctypes
 import shutil
+import multiprocessing
 from datetime import datetime
 import gzip
 import dill
@@ -8,6 +9,9 @@ import json
 from typing import TypeAlias
 
 import hail as hl
+
+
+NUM_CPU = multiprocessing.cpu_count()
 
 
 Content: TypeAlias = dict
@@ -19,7 +23,7 @@ CollectAll = lib.CollectAll
 Collect = lib.Collect
 Count = lib.Count
 
-CollectAll.argtypes = [ctypes.c_char_p, ctypes.c_bool]
+CollectAll.argtypes = [ctypes.c_char_p, ctypes.c_bool, ctypes.c_int]
 CollectAll.restype = ctypes.c_char_p
 
 Collect.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_char_p, ctypes.c_bool]
@@ -99,11 +103,14 @@ def load_dill(path: str) -> Content | None:
 
 
 class MatrixTableConsumer:
-    def __init__(self) -> None:
+    def __init__(self, vcf_path: str, is_gzip: bool = False, reference_genome: str = "GRCh38") -> None:
         self.visited_objects = set()
         self.visited_objects_values = {}
         self.visited_objects_values_for_restoring = []
         self.start_row = 0
+        self.vcf_path = vcf_path
+        self.is_gzip = is_gzip
+        self.reference_genome = reference_genome
 
     def _extract_fields(self, obj) -> Content:
         """Returns JSON with uncompressed object classes"""
@@ -183,11 +190,8 @@ class MatrixTableConsumer:
     def prepare_metadata_for_saving(
         self, json_path: str, mt: hl.MatrixTable
     ) -> Content:
-        logger_info("Prepare metadata for saving")
-
-        logger_info("Extract fields")
+        logger_info("Extracting fields")
         content = self._extract_fields(obj=mt)
-        logger_info("Extract fields end")
 
         logger_info("Save json")
         save_json(path=json_path, content=content)
@@ -198,49 +202,50 @@ class MatrixTableConsumer:
         logger_info("Prepare metadata for loading")
         content = get_json(path=json_path)
 
-        logger_info("Compress fields")
+        logger_info("Compressing fields")
         content = self._compress_fields(obj=content)
 
-        logger_info("Create matrix table")
+        logger_info("Creating matrix table")
         mt = hl.MatrixTable(mir=content["_mir"])
         mt.__dict__.update(content)
+        logger_info("End")
         return mt
 
-    def collect(self, num_rows: int, vcf_path: str, is_gzip: bool = False) -> Rows:
-        if not os.path.exists(vcf_path):
+    def collect(self, num_rows: int) -> Rows:
+        if not os.path.exists(self.vcf_path):
             logger_error("File not found")
             exit(1)
         logger_info("Collecting data")
 
-        vcf_path_encoded = vcf_path.encode("utf-8")
-        s = Collect(num_rows, self.start_row, vcf_path_encoded, is_gzip)
+        vcf_path_encoded = self.vcf_path.encode("utf-8")
+        s = Collect(num_rows, self.start_row, vcf_path_encoded, self.is_gzip)
         s = s.decode("utf-8")
         rows = json.loads(s)
         self.start_row += len(rows)
 
-        logger_info("Finish")
+        logger_info("End")
         return rows
 
-    def collect_all(self, vcf_path: str, is_gzip: bool = False) -> Rows:
-        if not os.path.exists(vcf_path):
+    def collect_all(self, num_cpu: int = 1) -> Rows:
+        if not os.path.exists(self.vcf_path):
             logger_error("File not found")
             exit(1)
         logger_info("Collecting data")
 
-        vcf_path_encoded = vcf_path.encode("utf-8")
-        s = CollectAll(vcf_path_encoded, is_gzip)
+        vcf_path_encoded = self.vcf_path.encode("utf-8")
+        s = CollectAll(vcf_path_encoded, self.is_gzip, num_cpu)
         s = s.decode("utf-8")
         rows = json.loads(s)
 
-        logger_info("Finish")
+        logger_info("End")
         return rows
 
-    def count(self, vcf_path: str, is_gzip: bool = False) -> int:
-        vcf_path_encoded = vcf_path.encode("utf-8")
-        c = Count(vcf_path_encoded, is_gzip)
+    def count(self) -> int:
+        vcf_path_encoded = self.vcf_path.encode("utf-8")
+        c = Count(vcf_path_encoded, self.is_gzip)
         return c
 
-    def convert_rows_to_hail(self, rows: Rows, reference_genome: str) -> Rows:
+    def convert_rows_to_hail(self, rows: Rows) -> Rows:
         structs = []
         for row in rows:
             row_fields = {}
@@ -248,7 +253,7 @@ class MatrixTableConsumer:
             locus = hl.Locus(
                 contig=row["CHROM"],
                 position=row["POS"],
-                reference_genome=reference_genome,
+                reference_genome=self.reference_genome,
             )
             alleles = [row["REF"], row["ALT"]]
             rsid = row["ID"]
@@ -270,9 +275,9 @@ class MatrixTableConsumer:
             structs.append(struct)
         return structs
 
-    def create_hail_table(self, rows: Rows, reference_genome: str) -> hl.Table:
+    def create_hail_table(self, rows: Rows) -> hl.Table:
         row_schema = hl.tstruct(
-            locus=hl.tlocus(reference_genome=reference_genome),
+            locus=hl.tlocus(reference_genome=self.reference_genome),
             alleles=hl.tarray(hl.tstr),
             rsid=hl.tstr,
             qual=hl.tint,
