@@ -1,0 +1,15 @@
+name: hail
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - openjdk=11
+  - ipykernel
+  - ipython
+  - pyspark
+  - nbformat
+  - go=1.24.5
+  - goimports-reviser
+  - gcc
+  - pip:
+    - hail==0.2.135

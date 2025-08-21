@@ -1,0 +1,60 @@
+import os
+from setuptools import setup, Extension, find_packages
+from setuptools.command.build_ext import build_ext
+import subprocess
+
+
+with open("README.md", "r", encoding="utf-8") as file:
+    long_description = file.read()
+
+
+class BuildGoExtension(build_ext):
+    """Class for compiling Go code."""
+
+    def run(self):
+        super().run()
+
+        go_dir = os.path.join(os.getcwd(), "functions")
+        os.chdir(go_dir)
+        env = os.environ.copy()
+        env["CGO_ENABLED"] = "1"
+
+        try:
+            subprocess.check_call(
+                ["go", "build", "-o", "../functions.so", "-buildmode=c-shared", "functions.go"],
+                env=env,
+            )
+        except subprocess.CalledProcessError as e:
+            raise RuntimeError(f"Error building Go module: {e}")
+        finally:
+            os.chdir("..")
+
+
+ext_modules = [
+    Extension("functions.so", sources=[]),
+]
+
+
+setup(
+    name="matrix_table_consumer",
+    version="1.0.0",
+    author="Philipp Roschin",
+    author_email="r.phil@yandex.ru",
+    description="MatrixTableConsumer, which performs operations on the Hail MatrixTable.",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
+    packages=find_packages(),
+    ext_modules=ext_modules,
+    cmdclass={'build_ext': BuildGoExtension},
+    include_package_data=True,
+    zip_safe=False,
+    license='MIT',
+    install_requires=[
+        "hail==0.2.135",
+    ],
+    classifiers=[
+        "Programming Language :: Python :: 3",
+        "Operating System :: OS Independent",
+    ],
+    python_requires="==3.12",
+)
