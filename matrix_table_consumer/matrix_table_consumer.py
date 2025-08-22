@@ -14,6 +14,8 @@ from tqdm import tqdm
 
 import hail as hl
 
+from .functions_py.convert_rows_to_hail_c import convert_rows_to_hail_c
+
 
 NUM_CPU = multiprocessing.cpu_count()
 
@@ -260,33 +262,9 @@ class MatrixTableConsumer:
         return c
 
     def convert_rows_to_hail(self, rows: Rows) -> Rows:
-        structs = []
-        for row in tqdm(rows, desc="Converting rows to hail"):
-            row_fields = {}
-
-            locus = hl.Locus(
-                contig=row["CHROM"],
-                position=row["POS"],
-                reference_genome=self.reference_genome,
-            )
-            alleles = [row["REF"], row["ALT"]]
-            rsid = row["ID"]
-            qual = row["QUAL"]
-            filters = row["FILTER"] if row["FILTER"] != "." else None
-            info = {"info": row["INFO"]}
-            info = hl.Struct(**info)
-            entries = []
-
-            row_fields["locus"] = locus
-            row_fields["alleles"] = alleles
-            row_fields["rsid"] = rsid
-            row_fields["qual"] = qual
-            row_fields["filters"] = filters
-            row_fields["info"] = info
-            row_fields["entries"] = entries
-
-            struct = hl.Struct(**row_fields)
-            structs.append(struct)
+        structs = convert_rows_to_hail_c(
+            rows=rows, reference_genome=self.reference_genome
+        )
         return structs
 
     def create_hail_table(self, rows: Rows) -> hl.Table:

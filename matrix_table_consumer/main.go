@@ -10,7 +10,7 @@ import (
 	"strings"
 	"sync"
 
-	functions "functions/functions"
+	functions "functions_go/functions_go"
 )
 
 //export CollectAll

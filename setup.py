@@ -2,6 +2,15 @@ import os
 from setuptools import setup, Extension, find_packages
 from setuptools.command.build_ext import build_ext
 import subprocess
+from Cython.Build import cythonize
+
+
+cython_directives = {
+    "boundscheck": False,
+    "cdivision": True,
+    "wraparound": False,
+    "language_level": 3,
+}
 
 
 with open("README.md", "r", encoding="utf-8") as file:
@@ -39,6 +48,11 @@ class BuildGoExtension(build_ext):
 
 ext_modules = [
     Extension("main.so", sources=[]),
+    Extension(
+        "matrix_table_consumer.functions_py.convert_rows_to_hail_c",
+        sources=["matrix_table_consumer/functions_py/convert_rows_to_hail_c.py"],
+        language="c",
+    ),
 ]
 
 
@@ -51,7 +65,7 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     packages=find_packages(),
-    ext_modules=ext_modules,
+    ext_modules=cythonize(ext_modules),
     cmdclass={"build_ext": BuildGoExtension},
     data_files=[
         ("", ["matrix_table_consumer/main.so"]),
@@ -61,6 +75,7 @@ setup(
     zip_safe=False,
     license="MIT",
     install_requires=[
+        "Cython==3.1.3",
         "hail==0.2.135",
         "pyspark==3.5.6",
         "tqdm==4.67.1",

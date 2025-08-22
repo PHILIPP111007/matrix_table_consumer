@@ -1,4 +1,4 @@
-package functions
+package functions_go
 
 import (
 	"C"

@@ -1,4 +1,4 @@
-package functions
+package functions_go
 
 type VCFContainer struct {
 	Qual   int8   `json:"QUAL"`
