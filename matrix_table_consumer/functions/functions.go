@@ -77,6 +77,10 @@ func parallelExtractRows(lines <-chan string, wg *sync.WaitGroup, output chan<- 
 
 //export CollectAll
 func CollectAll(vcf_path_pointer *C.char, is_gzip bool, num_cpu int) *C.char {
+	if num_cpu <= 0 {
+		num_cpu = 1
+	}
+
 	var reader *bufio.Reader
 	vcf_path := C.GoString(vcf_path_pointer)
 
@@ -180,6 +184,10 @@ func CollectAll(vcf_path_pointer *C.char, is_gzip bool, num_cpu int) *C.char {
 
 //export Collect
 func Collect(num_rows int, start_row int, vcf_path_pointer *C.char, is_gzip bool, num_cpu int) *C.char {
+	if num_cpu <= 0 {
+		num_cpu = 1
+	}
+
 	var reader *bufio.Reader
 	vcf_path := C.GoString(vcf_path_pointer)
 
