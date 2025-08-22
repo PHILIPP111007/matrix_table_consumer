@@ -7,6 +7,7 @@ import gzip
 import dill
 import json
 from typing import TypeAlias
+from tqdm import tqdm
 
 import hail as hl
 
@@ -247,7 +248,7 @@ class MatrixTableConsumer:
 
     def convert_rows_to_hail(self, rows: Rows) -> Rows:
         structs = []
-        for row in rows:
+        for row in tqdm(rows, desc="Converting rows to hail"):
             row_fields = {}
 
             locus = hl.Locus(

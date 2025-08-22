@@ -6,10 +6,11 @@ dependencies:
   - openjdk=11
   - ipykernel
   - ipython
-  - pyspark
+  - pyspark=3.5.6
   - nbformat
   - go=1.24.5
   - goimports-reviser
   - gcc
   - pip:
     - hail==0.2.135
+    - tqdm
