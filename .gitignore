@@ -1,7 +1,7 @@
 data/*
 hail*
-functions.h
-functions.so
+main.h
+main.so
 __pycache__
 matrix_table_consumer.egg-info
 build

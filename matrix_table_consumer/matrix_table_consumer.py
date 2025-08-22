@@ -22,7 +22,7 @@ Content: TypeAlias = dict
 Rows: TypeAlias = list[dict]
 
 current_dir = os.path.dirname(__file__)
-library_path = os.path.join(current_dir, "functions.so")
+library_path = os.path.join(current_dir, "main.so")
 
 lib = ctypes.CDLL(library_path)
 CollectAll = lib.CollectAll

@@ -14,7 +14,7 @@ class BuildGoExtension(build_ext):
     def run(self):
         super().run()
 
-        go_dir = os.path.join(os.getcwd(), "matrix_table_consumer", "functions")
+        go_dir = os.path.join(os.getcwd(), "matrix_table_consumer")
         os.chdir(go_dir)
         env = os.environ.copy()
         env["CGO_ENABLED"] = "1"
@@ -25,20 +25,20 @@ class BuildGoExtension(build_ext):
                     "go",
                     "build",
                     "-o",
-                    "../functions.so",
+                    "main.so",
                     "-buildmode=c-shared",
-                    "functions.go",
+                    "main.go",
                 ],
                 env=env,
             )
         except subprocess.CalledProcessError as e:
             raise RuntimeError(f"Error building Go module: {e}")
         finally:
-            os.chdir("../..")
+            os.chdir("..")
 
 
 ext_modules = [
-    Extension("functions.so", sources=[]),
+    Extension("main.so", sources=[]),
 ]
 
 
@@ -54,8 +54,8 @@ setup(
     ext_modules=ext_modules,
     cmdclass={"build_ext": BuildGoExtension},
     data_files=[
-        ("", ["matrix_table_consumer/functions.so"]),
-        ("", ["matrix_table_consumer/functions.h"]),
+        ("", ["matrix_table_consumer/main.so"]),
+        ("", ["matrix_table_consumer/main.h"]),
     ],
     include_package_data=True,
     zip_safe=False,

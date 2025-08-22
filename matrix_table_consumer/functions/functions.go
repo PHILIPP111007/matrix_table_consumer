@@ -1,43 +1,23 @@
-package main
-
-// go build -o functions.so -buildmode=c-shared functions/functions.go
+package functions
 
 import (
 	"C"
-	"bufio"
-	"compress/gzip"
-	"encoding/json"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 )
-import "time"
-
-type VCFContainer struct {
-	Qual   int8   `json:"QUAL"`
-	Pos    int32  `json:"POS"`
-	Chrom  string `json:"CHROM"`
-	Id     string `json:"ID"`
-	Ref    string `json:"REF"`
-	Alt    string `json:"ALT"`
-	Filter string `json:"FILTER"`
-	Info   string `json:"INFO"`
-}
-
-// Тип коллекции строк VCF
-type Rows []*VCFContainer
 
 func getTime() string {
 	return time.Now().Format("02-01-2006 15:04:05")
 }
 
-func loggerInfo(s string) {
+func LoggerInfo(s string) {
 	t := getTime()
 	fmt.Printf("[%s] - INFO - %s", t, s)
 }
-func loggerError(s string) {
+func LoggerError(s string) {
 	t := getTime()
 	fmt.Printf("[%s] - ERROR - %s", t, s)
 }
@@ -68,279 +48,9 @@ func extractRow(line string) *VCFContainer {
 	}
 }
 
-func parallelExtractRows(lines <-chan string, wg *sync.WaitGroup, output chan<- *VCFContainer) {
+func ParallelExtractRows(lines <-chan string, wg *sync.WaitGroup, output chan<- *VCFContainer) {
 	defer wg.Done()
 	for line := range lines {
 		output <- extractRow(line)
 	}
 }
-
-//export CollectAll
-func CollectAll(vcf_path_pointer *C.char, is_gzip bool, num_cpu int) *C.char {
-	if num_cpu <= 0 {
-		num_cpu = 1
-	}
-
-	var reader *bufio.Reader
-	vcf_path := C.GoString(vcf_path_pointer)
-
-	if is_gzip {
-		f, err := os.Open(vcf_path)
-		if err != nil {
-			s := fmt.Sprintf("Failed to open the file: %v\n", err)
-			loggerError(s)
-		}
-		defer f.Close()
-
-		gr, err := gzip.NewReader(f)
-		if err != nil {
-			s := fmt.Sprintf("Error creating gzip reader: %v\n", err)
-			loggerError(s)
-		}
-		defer gr.Close()
-
-		reader = bufio.NewReader(gr)
-	} else {
-		f, err := os.Open(vcf_path)
-		if err != nil {
-			s := fmt.Sprintf("Failed to open the file: %v\n", err)
-			loggerError(s)
-		}
-		defer f.Close()
-
-		reader = bufio.NewReader(f)
-	}
-
-	// Каналы для передачи строк и результатов
-	linesChan := make(chan string, 10_000)
-	resultsChan := make(chan *VCFContainer, 10_000)
-
-	rows_count := 0
-	var rows []*VCFContainer
-
-	wg := sync.WaitGroup{}
-	wg.Add(num_cpu)
-
-	for range num_cpu {
-		go parallelExtractRows(linesChan, &wg, resultsChan)
-	}
-
-	scanner := bufio.NewScanner(reader)
-	const maxTokenSize = 1 << 20
-	buf := make([]byte, maxTokenSize)
-	scanner.Buffer(buf, maxTokenSize)
-
-	// Пропускаем строки с символами # (заголовки)
-	for scanner.Scan() && strings.HasPrefix(scanner.Text(), "#") {
-	}
-
-	for scanner.Scan() {
-		line := scanner.Text()
-
-		// Проверяем, не заполнен ли канал результатов
-		select {
-		case row := <-resultsChan:
-			rows = append(rows, row)
-		default:
-			// ничего не делаем, если канал пуст
-		}
-
-		linesChan <- line
-
-		if rows_count%50_000 == 0 {
-			s := fmt.Sprintf("%d lines read\n", rows_count)
-			loggerInfo(s)
-		}
-
-		rows_count += 1
-	}
-
-	loggerInfo("Waiting for channels...\n")
-
-	close(linesChan)
-	wg.Wait()
-	close(resultsChan)
-
-	loggerInfo("Extracting data...\n")
-
-	// Собираем результаты
-	for row := range resultsChan {
-		rows = append(rows, row)
-	}
-
-	if err := scanner.Err(); err != nil {
-		s := fmt.Sprintf("Reading standard input: %v\n", err)
-		loggerError(s)
-	}
-
-	jsonBytes, err := json.MarshalIndent(rows, "", "  ")
-	if err != nil {
-		s := fmt.Sprintf("JSON conversion error: %v\n", err)
-		loggerError(s)
-	}
-
-	return C.CString(string(jsonBytes))
-}
-
-//export Collect
-func Collect(num_rows int, start_row int, vcf_path_pointer *C.char, is_gzip bool, num_cpu int) *C.char {
-	if num_cpu <= 0 {
-		num_cpu = 1
-	}
-
-	var reader *bufio.Reader
-	vcf_path := C.GoString(vcf_path_pointer)
-
-	if is_gzip {
-		f, err := os.Open(vcf_path)
-		if err != nil {
-			s := fmt.Sprintf("Failed to open the file: %v\n", err)
-			loggerError(s)
-		}
-		defer f.Close()
-
-		gr, err := gzip.NewReader(f)
-		if err != nil {
-			s := fmt.Sprintf("Error creating gzip reader: %v\n", err)
-			loggerError(s)
-		}
-		defer gr.Close()
-
-		reader = bufio.NewReader(gr)
-	} else {
-		f, err := os.Open(vcf_path)
-		if err != nil {
-			s := fmt.Sprintf("Failed to open the file: %v\n", err)
-			loggerError(s)
-		}
-		defer f.Close()
-
-		reader = bufio.NewReader(f)
-	}
-
-	flag := false
-	rows := make([]*VCFContainer, 0)
-	rows_count := 0
-
-	// Каналы для передачи строк и результатов
-	linesChan := make(chan string, 10_000)
-	resultsChan := make(chan *VCFContainer, 10_000)
-
-	wg := sync.WaitGroup{}
-	wg.Add(num_cpu)
-
-	for range num_cpu {
-		go parallelExtractRows(linesChan, &wg, resultsChan)
-	}
-
-	scanner := bufio.NewScanner(reader)
-	const maxTokenSize = 1 << 20
-	buf := make([]byte, maxTokenSize)
-	scanner.Buffer(buf, maxTokenSize)
-
-	// Пропускаем строки с символами # (заголовки)
-	for scanner.Scan() && strings.HasPrefix(scanner.Text(), "#") {
-	}
-
-	for scanner.Scan() {
-		if rows_count >= start_row+num_rows {
-			flag = false
-			break
-		} else if flag {
-			line := scanner.Text()
-			linesChan <- line
-		} else if start_row == rows_count {
-			flag = true
-			line := scanner.Text()
-			linesChan <- line
-		}
-
-		select {
-		case row := <-resultsChan:
-			rows = append(rows, row)
-		default:
-			// ничего не делаем, если канал пуст
-		}
-
-		rows_count += 1
-	}
-
-	close(linesChan)
-	wg.Wait()
-	close(resultsChan)
-
-	if err := scanner.Err(); err != nil {
-		s := fmt.Sprintf("Reading standard input: %v\n", err)
-		loggerError(s)
-	}
-
-	// Собираем результаты
-	for row := range resultsChan {
-		rows = append(rows, row)
-	}
-
-	jsonBytes, err := json.MarshalIndent(rows, "", "  ")
-	if err != nil {
-		s := fmt.Sprintf("JSON conversion error: %v\n", err)
-		loggerError(s)
-	}
-
-	return C.CString(string(jsonBytes))
-}
-
-//export Count
-func Count(vcf_path_pointer *C.char, is_gzip bool) int {
-	var reader *bufio.Reader
-
-	vcf_path := C.GoString(vcf_path_pointer)
-
-	if is_gzip {
-		f, err := os.Open(vcf_path)
-		if err != nil {
-			s := fmt.Sprintf("Failed to open the file: %v\n", err)
-			loggerError(s)
-		}
-		defer f.Close()
-
-		gr, err := gzip.NewReader(f)
-		if err != nil {
-			s := fmt.Sprintf("Error creating gzip reader: %v\n", err)
-			loggerError(s)
-		}
-		defer gr.Close()
-
-		reader = bufio.NewReader(gr)
-	} else {
-		f, err := os.Open(vcf_path)
-		if err != nil {
-			s := fmt.Sprintf("Failed to open the file: %v\n", err)
-			loggerError(s)
-		}
-		defer f.Close()
-
-		reader = bufio.NewReader(f)
-	}
-
-	rows_count := 0
-
-	scanner := bufio.NewScanner(reader)
-	const maxTokenSize = 1 << 20
-	buf := make([]byte, maxTokenSize)
-	scanner.Buffer(buf, maxTokenSize)
-
-	for scanner.Scan() && strings.HasPrefix(scanner.Text(), "#") {
-	}
-
-	for scanner.Scan() {
-		rows_count += 1
-	}
-
-	if err := scanner.Err(); err != nil {
-		s := fmt.Sprintf("Reading standard input: %v\n", err)
-		loggerError(s)
-	}
-
-	return rows_count
-}
-
-func main() {}

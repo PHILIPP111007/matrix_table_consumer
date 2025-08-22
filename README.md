@@ -4,7 +4,6 @@ To install this package run (you need to have Go):
 
 ```bash
 pip install build
-python -m build
 pip install .
 ```
 
