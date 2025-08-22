@@ -3,7 +3,9 @@
 To install this package run (you need to have Go):
 
 ```bash
-python setup.py install
+pip install build
+python -m build
+pip install .
 ```
 
 To compile Go modules with C types to work with Python run:

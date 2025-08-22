@@ -5,3 +5,4 @@ functions.so
 __pycache__
 matrix_table_consumer.egg-info
 build
+dist

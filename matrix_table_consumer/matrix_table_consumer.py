@@ -18,8 +18,10 @@ NUM_CPU = multiprocessing.cpu_count()
 Content: TypeAlias = dict
 Rows: TypeAlias = list[dict]
 
+current_dir = os.path.dirname(__file__)
+library_path = os.path.join(current_dir, "functions.so")
 
-lib = ctypes.CDLL("./functions.so")
+lib = ctypes.CDLL(library_path)
 CollectAll = lib.CollectAll
 Collect = lib.Collect
 Count = lib.Count
