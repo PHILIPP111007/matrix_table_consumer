@@ -1,15 +1,17 @@
-# MatrixTableConsumer
+# MatrixTableConsumer v1.0.0
+
+To install this package run (you need to have Go):
+
+```bash
+python setup.py install
+```
 
 To compile Go modules with C types to work with Python run:
 
 ```bash
+export CGO_ENABLED=1
+
 go build -o functions.so -buildmode=c-shared functions/functions.go
-```
-
-To install this package run:
-
-```bash
-python setup.py install
 ```
 
 We have a class `MatrixTableConsumer`, which performs operations on Hail matrix table:
