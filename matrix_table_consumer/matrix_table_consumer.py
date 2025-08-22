@@ -205,26 +205,28 @@ class MatrixTableConsumer:
 
     def prepare_metadata_for_saving(
         self, json_path: str, mt: hl.MatrixTable
-    ) -> Content:
-        logger_info("Extracting fields")
-        content = self._extract_fields(obj=mt)
+    ) -> Content:        
+        progress_bar = tqdm(total=2, desc="Extracting fields")
 
-        logger_info("Save json")
+        content = self._extract_fields(obj=mt)
+        progress_bar.update(1)
+
         save_json(path=json_path, content=content)
-        logger_info("End")
+        progress_bar.update(1)
+        progress_bar.close()
         return content
 
     def prepare_metadata_for_loading(self, json_path: str) -> hl.MatrixTable:
-        logger_info("Prepare metadata for loading")
+        progress_bar = tqdm(total=3, desc="Prepare metadata for loading")
         content = get_json(path=json_path)
+        progress_bar.update(1)
 
-        logger_info("Compressing fields")
         content = self._compress_fields(obj=content)
+        progress_bar.update(1)
 
-        logger_info("Creating matrix table")
         mt = hl.MatrixTable(mir=content["_mir"])
         mt.__dict__.update(content)
-        logger_info("End")
+        progress_bar.update(1)
         return mt
 
     def collect(self, num_rows: int, num_cpu: int = 1) -> Rows:
