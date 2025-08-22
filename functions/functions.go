@@ -117,7 +117,6 @@ func CollectAll(vcf_path_pointer *C.char, is_gzip bool, num_cpu int) *C.char {
 	wg := sync.WaitGroup{}
 	wg.Add(num_cpu)
 
-	// Запустить рабочие горутины
 	for range num_cpu {
 		go parallelExtractRows(linesChan, &wg, resultsChan)
 	}
@@ -126,12 +125,13 @@ func CollectAll(vcf_path_pointer *C.char, is_gzip bool, num_cpu int) *C.char {
 	const maxTokenSize = 1 << 20
 	buf := make([]byte, maxTokenSize)
 	scanner.Buffer(buf, maxTokenSize)
+
+	// Пропускаем строки с символами # (заголовки)
+	for scanner.Scan() && strings.HasPrefix(scanner.Text(), "#") {
+	}
+
 	for scanner.Scan() {
 		line := scanner.Text()
-		if strings.HasPrefix(line, "#") {
-			continue
-		}
-		rows_count += 1
 
 		// Проверяем, не заполнен ли канал результатов
 		select {
@@ -147,6 +147,8 @@ func CollectAll(vcf_path_pointer *C.char, is_gzip bool, num_cpu int) *C.char {
 			s := fmt.Sprintf("%d lines read\n", rows_count)
 			loggerInfo(s)
 		}
+
+		rows_count += 1
 	}
 
 	loggerInfo("Waiting for channels...\n")
@@ -177,7 +179,7 @@ func CollectAll(vcf_path_pointer *C.char, is_gzip bool, num_cpu int) *C.char {
 }
 
 //export Collect
-func Collect(num_rows int, start_row int, vcf_path_pointer *C.char, is_gzip bool) *C.char {
+func Collect(num_rows int, start_row int, vcf_path_pointer *C.char, is_gzip bool, num_cpu int) *C.char {
 	var reader *bufio.Reader
 	vcf_path := C.GoString(vcf_path_pointer)
 
@@ -208,38 +210,65 @@ func Collect(num_rows int, start_row int, vcf_path_pointer *C.char, is_gzip bool
 		reader = bufio.NewReader(f)
 	}
 
-	num := 0
 	flag := false
 	rows := make([]*VCFContainer, 0)
+	rows_count := 0
+
+	// Каналы для передачи строк и результатов
+	linesChan := make(chan string, 10_000)
+	resultsChan := make(chan *VCFContainer, 10_000)
+
+	wg := sync.WaitGroup{}
+	wg.Add(num_cpu)
+
+	for range num_cpu {
+		go parallelExtractRows(linesChan, &wg, resultsChan)
+	}
 
 	scanner := bufio.NewScanner(reader)
 	const maxTokenSize = 1 << 20
 	buf := make([]byte, maxTokenSize)
 	scanner.Buffer(buf, maxTokenSize)
-	for scanner.Scan() {
-		line := scanner.Text()
 
-		if strings.HasPrefix(line, "#") {
-			continue
-		} else if num-start_row >= num_rows {
+	// Пропускаем строки с символами # (заголовки)
+	for scanner.Scan() && strings.HasPrefix(scanner.Text(), "#") {
+	}
+
+	for scanner.Scan() {
+		if rows_count >= start_row+num_rows {
+			flag = false
 			break
 		} else if flag {
-			row := extractRow(line)
-			rows = append(rows, row)
-			num += 1
-		} else if start_row == num {
+			line := scanner.Text()
+			linesChan <- line
+		} else if start_row == rows_count {
 			flag = true
-			row := extractRow(line)
-			rows = append(rows, row)
-			num += 1
-		} else {
-			num += 1
+			line := scanner.Text()
+			linesChan <- line
 		}
+
+		select {
+		case row := <-resultsChan:
+			rows = append(rows, row)
+		default:
+			// ничего не делаем, если канал пуст
+		}
+
+		rows_count += 1
 	}
+
+	close(linesChan)
+	wg.Wait()
+	close(resultsChan)
 
 	if err := scanner.Err(); err != nil {
 		s := fmt.Sprintf("Reading standard input: %v\n", err)
 		loggerError(s)
+	}
+
+	// Собираем результаты
+	for row := range resultsChan {
+		rows = append(rows, row)
 	}
 
 	jsonBytes, err := json.MarshalIndent(rows, "", "  ")
@@ -290,11 +319,11 @@ func Count(vcf_path_pointer *C.char, is_gzip bool) int {
 	const maxTokenSize = 1 << 20
 	buf := make([]byte, maxTokenSize)
 	scanner.Buffer(buf, maxTokenSize)
+
+	for scanner.Scan() && strings.HasPrefix(scanner.Text(), "#") {
+	}
+
 	for scanner.Scan() {
-		line := scanner.Text()
-		if strings.HasPrefix(line, "#") {
-			continue
-		}
 		rows_count += 1
 	}
 

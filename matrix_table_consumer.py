@@ -27,7 +27,7 @@ Count = lib.Count
 CollectAll.argtypes = [ctypes.c_char_p, ctypes.c_bool, ctypes.c_int]
 CollectAll.restype = ctypes.c_char_p
 
-Collect.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_char_p, ctypes.c_bool]
+Collect.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_char_p, ctypes.c_bool, ctypes.c_int]
 Collect.restype = ctypes.c_char_p
 
 Count.argtypes = [ctypes.c_char_p, ctypes.c_bool]
@@ -212,14 +212,14 @@ class MatrixTableConsumer:
         logger_info("End")
         return mt
 
-    def collect(self, num_rows: int) -> Rows:
+    def collect(self, num_rows: int, num_cpu: int = 1) -> Rows:
         if not os.path.exists(self.vcf_path):
             logger_error("File not found")
             exit(1)
         logger_info("Collecting data")
 
         vcf_path_encoded = self.vcf_path.encode("utf-8")
-        s = Collect(num_rows, self.start_row, vcf_path_encoded, self.is_gzip)
+        s = Collect(num_rows, self.start_row, vcf_path_encoded, self.is_gzip, num_cpu)
         s = s.decode("utf-8")
         rows = json.loads(s)
         self.start_row += len(rows)
