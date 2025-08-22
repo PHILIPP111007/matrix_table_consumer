@@ -46,7 +46,7 @@ setup(
     packages=find_packages(),
     ext_modules=ext_modules,
     cmdclass={'build_ext': BuildGoExtension},
-    data_files=[("", ["matrix_table_consumer/functions.so"])],
+    data_files=[("", ["matrix_table_consumer/functions.so"]), ("", ["matrix_table_consumer/functions.h"])],
     include_package_data=True,
     zip_safe=False,
     license='MIT',
