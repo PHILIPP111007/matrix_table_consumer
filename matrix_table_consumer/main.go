@@ -278,7 +278,7 @@ func Count(vcf_path_pointer *C.char, is_gzip bool) int {
 		functions.LoggerError(s)
 	}
 
-	return rows_count
+	return rows_count + 1
 }
 
 func main() {}

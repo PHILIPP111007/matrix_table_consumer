@@ -1,4 +1,3 @@
-data/*
 hail*
 main.h
 main.so
@@ -6,3 +5,4 @@ __pycache__
 matrix_table_consumer.egg-info
 build
 dist
+data/ALL.chr1.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz

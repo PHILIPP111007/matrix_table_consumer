@@ -33,6 +33,12 @@ We have a class `MatrixTableConsumer`, which performs operations on Hail matrix 
 
 - `MatrixTableConsumer().count` returns number of rows in the vcf file
 
+To run tests, use:
+
+```bash
+pytest
+```
+
 > You may donate to [matrix_table_consumer](https://github.com/PHILIPP111007/matrix_table_consumer) project:
 >
 > * Ethereum: 0xE2e2D675a3843f4ED211BB93847ad18b0A6fe7c6

@@ -64,6 +64,7 @@ setup(
         "hail==0.2.135",
         "pyspark==3.5.6",
         "tqdm==4.67.1",
+        "pytest==8.4.1",
     ],
     classifiers=[
         "Programming Language :: Python :: 3",
