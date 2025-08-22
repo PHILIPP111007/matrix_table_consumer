@@ -1,2 +1,4 @@
 hail==0.2.135
 pyspark
+tqdm
+pytest
