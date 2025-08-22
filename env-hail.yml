@@ -1,4 +1,4 @@
-name: hail
+name: matrix_table_consumer
 channels:
   - conda-forge
 dependencies:

@@ -1,3 +1,6 @@
+__version__ = "1.0.0"
+
+
 import os
 import ctypes
 import shutil
@@ -29,7 +32,13 @@ Count = lib.Count
 CollectAll.argtypes = [ctypes.c_char_p, ctypes.c_bool, ctypes.c_int]
 CollectAll.restype = ctypes.c_char_p
 
-Collect.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_char_p, ctypes.c_bool, ctypes.c_int]
+Collect.argtypes = [
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_char_p,
+    ctypes.c_bool,
+    ctypes.c_int,
+]
 Collect.restype = ctypes.c_char_p
 
 Count.argtypes = [ctypes.c_char_p, ctypes.c_bool]
@@ -106,7 +115,9 @@ def load_dill(path: str) -> Content | None:
 
 
 class MatrixTableConsumer:
-    def __init__(self, vcf_path: str, is_gzip: bool = False, reference_genome: str = "GRCh38") -> None:
+    def __init__(
+        self, vcf_path: str, is_gzip: bool = False, reference_genome: str = "GRCh38"
+    ) -> None:
         self.visited_objects = set()
         self.visited_objects_values = {}
         self.visited_objects_values_for_restoring = []
@@ -301,4 +312,4 @@ class MatrixTableConsumer:
 
 
 if __name__ == "__main__":
-    print("MatrixTableConsumer v1.0.")
+    print(f"MatrixTableConsumer v{__version__}.")

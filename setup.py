@@ -21,7 +21,14 @@ class BuildGoExtension(build_ext):
 
         try:
             subprocess.check_call(
-                ["go", "build", "-o", "../functions.so", "-buildmode=c-shared", "functions.go"],
+                [
+                    "go",
+                    "build",
+                    "-o",
+                    "../functions.so",
+                    "-buildmode=c-shared",
+                    "functions.go",
+                ],
                 env=env,
             )
         except subprocess.CalledProcessError as e:
@@ -45,11 +52,14 @@ setup(
     long_description_content_type="text/markdown",
     packages=find_packages(),
     ext_modules=ext_modules,
-    cmdclass={'build_ext': BuildGoExtension},
-    data_files=[("", ["matrix_table_consumer/functions.so"]), ("", ["matrix_table_consumer/functions.h"])],
+    cmdclass={"build_ext": BuildGoExtension},
+    data_files=[
+        ("", ["matrix_table_consumer/functions.so"]),
+        ("", ["matrix_table_consumer/functions.h"]),
+    ],
     include_package_data=True,
     zip_safe=False,
-    license='MIT',
+    license="MIT",
     install_requires=[
         "hail==0.2.135",
         "pyspark==3.5.6",
