@@ -36,6 +36,6 @@ time python matrix_table_consumer/matrix_table_consumer.py -filter \
 ```
 
 time: \
-real    3m37.825s \
-user    17m21.532s \
-sys     1m10.984s
+real    2m48.941s \
+user    14m40.598s \
+sys     0m55.775s

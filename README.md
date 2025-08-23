@@ -33,16 +33,21 @@ We have a class `MatrixTableConsumer`, which performs operations on Hail matrix 
 
 - `MatrixTableConsumer().count` returns number of rows in the vcf file
 
+___
+
 You can look at the `main.ipynb` file, which contains examples of using `MatrixTableConsumer`
 
-Now you can filter `.vcf` files by QUAL and AF:
+You can look at the `benchmarks.md` file, which contains benchmark of my program and bcftools
+
+Now you can filter `.vcf` files by `QUAL` and `AF`:
 
 ```bash
 python matrix_table_consumer/matrix_table_consumer.py -filter \
     -o ./data/test_1.vcf \
     -vcf ./data/ALL.chr1.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz \
     i "QUAL >= 90" \
-    -gzip
+    -gzip \
+    -num_cpu 7
 ```
 
 To run tests, use:
