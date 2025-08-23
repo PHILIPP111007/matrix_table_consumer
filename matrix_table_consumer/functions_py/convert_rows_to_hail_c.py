@@ -16,13 +16,16 @@ def convert_rows_to_hail_c(rows: list[dict], reference_genome: str) -> list[hl.S
     for i in range(len_rows):
         row: dict = rows[i]
 
-        chrom = row["CHROM"]
+        chrom: str = row["CHROM"]
         pos: cython.int = row["POS"]
         locus: hl.Locus = hl.Locus(
             contig=chrom, position=pos, reference_genome=reference_genome
         )
 
-        alleles: list = [row["REF"], row["ALT"]]
+        ref: str = row["REF"]
+        alt: str = row["ALT"]
+        alleles: list = [ref, alt]
+
         rsid: str = row["ID"]
         qual: cython.float = row["QUAL"]
         filters: str = row["FILTER"]
