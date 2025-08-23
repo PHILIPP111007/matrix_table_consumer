@@ -20,12 +20,6 @@ func Filter(include string, input_vcf_path string, output_vcf_path string, is_gz
 	expression := parts[1]
 	filterNumberStr := parts[2]
 
-	filterNumber, err := strconv.Atoi(filterNumberStr)
-	if err != nil {
-		s := fmt.Sprintf("Invalid number provided: %s\n", filterNumberStr)
-		LoggerError(s)
-	}
-
 	var reader *bufio.Reader
 	if is_gzip {
 		f, err := os.Open(input_vcf_path)
@@ -71,8 +65,30 @@ func Filter(include string, input_vcf_path string, output_vcf_path string, is_gz
 	resultsChan := make(chan string, 500_000)
 	num := 0
 
-	for range num_cpu {
-		go ParallelFilterRows(linesChan, &wg, resultsChan, key, expression, filterNumber)
+	switch key {
+	case "QUAL":
+		filterNumber, err := strconv.Atoi(filterNumberStr)
+		if err != nil {
+			s := fmt.Sprintf("Invalid number provided: %s\n", filterNumberStr)
+			LoggerError(s)
+			return
+		}
+
+		for range num_cpu {
+			go ParallelFilterRowsByQUAL(linesChan, &wg, resultsChan, key, expression, filterNumber)
+		}
+
+	case "AF":
+		filterNumber, err := strconv.ParseFloat(filterNumberStr, 64)
+		if err != nil {
+			s := fmt.Sprintf("Invalid number provided: %s\n", filterNumberStr)
+			LoggerError(s)
+			return
+		}
+
+		for range num_cpu {
+			go ParallelFilterRowsByAF(linesChan, &wg, resultsChan, key, expression, filterNumber)
+		}
 	}
 
 	for scanner.Scan() {

@@ -35,7 +35,7 @@ We have a class `MatrixTableConsumer`, which performs operations on Hail matrix 
 
 You can look at the `main.ipynb` file, which contains examples of using `MatrixTableConsumer`
 
-Now you can filter `.vcf` files by QUAL:
+Now you can filter `.vcf` files by QUAL and AF:
 
 ```bash
 python matrix_table_consumer/matrix_table_consumer.py -filter \

@@ -55,46 +55,93 @@ func ParallelExtractRows(lines <-chan string, wg *sync.WaitGroup, output chan<- 
 	}
 }
 
-func ParallelFilterRows(lines <-chan string, wg *sync.WaitGroup, output chan<- string, key string, expression string, filterNumber int) {
+func ParallelFilterRowsByQUAL(lines <-chan string, wg *sync.WaitGroup, output chan<- string, key string, expression string, filterNumber int) {
 	defer wg.Done()
 
 	for line := range lines {
 		lineList := strings.Split(line, "\t")
 
-		if key == "QUAL" {
-			itemValue := lineList[5]
+		itemValue := lineList[5]
 
-			if itemValue == "." {
-				continue
+		if itemValue == "." {
+			continue
+		}
+
+		item, err := strconv.Atoi(itemValue)
+		if err != nil {
+			s := fmt.Sprintf("Skipping invalid value: %s\n", err)
+			LoggerError(s)
+			continue
+		}
+
+		switch expression {
+		case ">":
+			if item > filterNumber {
+				output <- line
 			}
-
-			item, err := strconv.Atoi(itemValue)
-			if err != nil {
-				s := fmt.Sprintf("Skipping invalid value: %s\n", err)
-				LoggerError(s)
-				continue
+		case "<":
+			if item < filterNumber {
+				output <- line
 			}
+		case ">=":
+			if item >= filterNumber {
+				output <- line
+			}
+		case "<=":
+			if item <= filterNumber {
+				output <- line
+			}
+		default:
+			s := fmt.Sprintf("Unsupported comparison operator: %s\n", expression)
+			LoggerError(s)
+		}
+	}
+}
 
-			switch expression {
-			case ">":
-				if item > filterNumber {
-					output <- line
+func ParallelFilterRowsByAF(lines <-chan string, wg *sync.WaitGroup, output chan<- string, key string, expression string, filterNumber float64) {
+	defer wg.Done()
+
+	for line := range lines {
+		lineList := strings.Split(line, "\t")
+		itemValue := lineList[7]
+		itemValueList := strings.Split(itemValue, ";")
+
+		for _, part := range itemValueList {
+			if strings.HasPrefix(part, "AF=") {
+				af_str := part[3:]
+				af_str_list := strings.Split(af_str, ",")
+				af_str = af_str_list[0]
+
+				af, err := strconv.ParseFloat(af_str, 64)
+				if err != nil {
+					s := fmt.Sprintf("Skipping invalid value: %s\n", err)
+					LoggerError(s)
+					continue
 				}
-			case "<":
-				if item < filterNumber {
-					output <- line
+
+				switch expression {
+				case ">":
+					if af > filterNumber {
+						output <- line
+					}
+				case "<":
+					if af < filterNumber {
+						output <- line
+					}
+				case ">=":
+					if af >= filterNumber {
+						output <- line
+					}
+				case "<=":
+					if af <= filterNumber {
+						output <- line
+					}
+				default:
+					s := fmt.Sprintf("Unsupported comparison operator: %s\n", expression)
+					LoggerError(s)
 				}
-			case ">=":
-				if item >= filterNumber {
-					output <- line
-				}
-			case "<=":
-				if item <= filterNumber {
-					output <- line
-				}
-			default:
-				s := fmt.Sprintf("Unsupported comparison operator: %s\n", expression)
-				LoggerError(s)
+
+				break
 			}
 		}
 	}
