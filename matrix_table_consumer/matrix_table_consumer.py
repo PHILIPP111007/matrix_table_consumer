@@ -135,7 +135,7 @@ class MatrixTableConsumer:
         self.visited_objects = set()
         self.visited_objects_values = {}
         self.visited_objects_values_for_restoring = []
-        self.start_row = 0
+        self.start_row = 1
         self.vcf_path = vcf_path
         self.is_gzip = is_gzip
         self.reference_genome = reference_genome

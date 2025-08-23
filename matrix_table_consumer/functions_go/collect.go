@@ -65,13 +65,12 @@ func Collect(num_rows int, start_row int, vcf_path string, is_gzip bool, num_cpu
 	buf := make([]byte, maxTokenSize)
 	scanner.Buffer(buf, maxTokenSize)
 
-	// bar := New(num_rows, WithDescription("Collecting data"))
+	bar := New(num_rows, WithDescription("Collecting data"))
 
 	for scanner.Scan() {
 		if strings.HasPrefix(scanner.Text(), "#") {
 			continue
 		}
-		fmt.Println(start_row, rows_count)
 
 		if rows_count >= start_row+num_rows {
 			flag = false
@@ -79,36 +78,29 @@ func Collect(num_rows int, start_row int, vcf_path string, is_gzip bool, num_cpu
 		} else if flag {
 			line := scanner.Text()
 			linesChan <- line
+			bar.Increment()
 		} else if start_row == rows_count {
-			fmt.Println("flag")
 			flag = true
 			line := scanner.Text()
 			linesChan <- line
+			bar.Increment()
 		}
 
-		// if num == 200_000 {
-		// 	num = 0
-		// 	len_chan := len(resultsChan)
-		// 	if len_chan != 0 {
-		// 		for range len_chan {
-		// 			row := <-resultsChan
-		// 			rows = append(rows, row)
-		// 		}
-		// 	}
-		// }
-
-		select {
-		case row := <-resultsChan:
-			rows = append(rows, row)
-		default:
-			// we do nothing if the channel is empty
+		if num == 200_000 {
+			num = 0
+			len_chan := len(resultsChan)
+			if len_chan != 0 {
+				for range len_chan {
+					row := <-resultsChan
+					rows = append(rows, row)
+				}
+			}
 		}
 
 		rows_count += 1
 		num += 1
-		// bar.Increment()
 	}
-	// bar.Close()
+	bar.Close()
 
 	close(linesChan)
 	wg.Wait()
@@ -167,10 +159,11 @@ func CollectAll(vcf_path string, is_gzip bool, num_cpu int) string {
 	}
 
 	// Channels for transmitting strings and results
-	linesChan := make(chan string, 10_000)
-	resultsChan := make(chan *VCFContainer, 10_000)
+	linesChan := make(chan string, 100_000)
+	resultsChan := make(chan *VCFContainer, 200_000)
 
 	rows_count := 0
+	num := 0
 	var rows []*VCFContainer
 
 	wg := sync.WaitGroup{}
@@ -185,28 +178,31 @@ func CollectAll(vcf_path string, is_gzip bool, num_cpu int) string {
 	buf := make([]byte, maxTokenSize)
 	scanner.Buffer(buf, maxTokenSize)
 
-	// Skip lines with # symbols (headers)
-	for scanner.Scan() && strings.HasPrefix(scanner.Text(), "#") {
-	}
-
 	for scanner.Scan() {
 		line := scanner.Text()
+		if strings.HasPrefix(line, "#") {
+			continue
+		}
 
-		// Check if the results channel is full
-		select {
-		case row := <-resultsChan:
-			rows = append(rows, row)
-		default:
-			// we do nothing if the channel is empty
+		if num == 200_000 {
+			num = 0
+			len_chan := len(resultsChan)
+			if len_chan != 0 {
+				for range len_chan {
+					row := <-resultsChan
+					rows = append(rows, row)
+				}
+			}
 		}
 
 		linesChan <- line
 
-		if rows_count%50_000 == 0 {
+		if rows_count%50_000 == 0 && rows_count != 0 {
 			s := fmt.Sprintf("%d lines read\n", rows_count)
 			LoggerInfo(s)
 		}
 
+		num += 1
 		rows_count += 1
 	}
 
