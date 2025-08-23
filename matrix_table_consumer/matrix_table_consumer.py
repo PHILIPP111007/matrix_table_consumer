@@ -16,7 +16,7 @@ from typing import TypeAlias
 from tqdm import tqdm
 import hail as hl
 
-from .functions_py.convert_rows_to_hail_c import convert_rows_to_hail_c
+from functions_py.convert_rows_to_hail_c import convert_rows_to_hail_c
 
 
 NUM_CPU = multiprocessing.cpu_count()
