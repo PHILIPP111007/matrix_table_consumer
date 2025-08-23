@@ -10,27 +10,6 @@ import (
 	"unicode/utf8"
 )
 
-// Tqdm introduces progress bar
-type Tqdm struct {
-	total       int
-	current     int
-	startTime   time.Time
-	lastUpdate  time.Time
-	description string
-	writer      io.Writer
-	barFormat   string
-	width       int
-	showBar     bool
-	showRate    bool
-	showETA     bool
-	unit        string
-	unitScale   bool
-	minInterval time.Duration
-}
-
-// Option defines a function to configure Tqdm
-type Option func(*Tqdm)
-
 func New(total int, options ...Option) *Tqdm {
 	t := &Tqdm{
 		total:       total,
