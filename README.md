@@ -45,7 +45,7 @@ Now you can filter `.vcf` files by `QUAL` and `AF`:
 python matrix_table_consumer/matrix_table_consumer.py -filter \
     -o ./data/test_1.vcf \
     -vcf ./data/ALL.chr1.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz \
-    i "QUAL >= 90" \
+    -i "QUAL >= 90" \
     -gzip \
     -num_cpu 7
 ```
