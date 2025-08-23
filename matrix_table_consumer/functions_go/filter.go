@@ -7,9 +7,14 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 )
 
-func Filter(include string, input_vcf_path string, output_vcf_path string, is_gzip bool) {
+func Filter(include string, input_vcf_path string, output_vcf_path string, is_gzip bool, num_cpu int) {
+	if num_cpu <= 0 {
+		num_cpu = 1
+	}
+
 	parts := strings.Split(include, " ")
 	key := parts[0]
 	expression := parts[1]
@@ -60,6 +65,16 @@ func Filter(include string, input_vcf_path string, output_vcf_path string, is_gz
 	writer := bufio.NewWriter(outputFile)
 	defer writer.Flush()
 
+	wg := sync.WaitGroup{}
+	wg.Add(num_cpu)
+	linesChan := make(chan string, 100_000)
+	resultsChan := make(chan string, 500_000)
+	num := 0
+
+	for range num_cpu {
+		go ParallelFilterRows(linesChan, &wg, resultsChan, key, expression, filterNumber)
+	}
+
 	for scanner.Scan() {
 		line := scanner.Text()
 		if strings.HasPrefix(line, "#") {
@@ -67,48 +82,31 @@ func Filter(include string, input_vcf_path string, output_vcf_path string, is_gz
 			continue
 		}
 
-		lineList := strings.Split(line, "\t")
-
-		if key == "QUAL" {
-			itemValue := lineList[5]
-
-			if itemValue == "." {
-				continue
-			}
-
-			item, err := strconv.Atoi(itemValue)
-			if err != nil {
-				s := fmt.Sprintf("Skipping invalid value: %s\n", err)
-				LoggerError(s)
-				continue
-			}
-
-			switch expression {
-			case ">":
-				if item > filterNumber {
-					fmt.Fprintln(writer, line)
+		if num == 500_000 {
+			num = 0
+			len_chan := len(resultsChan)
+			if len_chan != 0 {
+				for range len_chan {
+					row := <-resultsChan
+					fmt.Fprintln(writer, row)
 				}
-			case "<":
-				if item < filterNumber {
-					fmt.Fprintln(writer, line)
-				}
-			case ">=":
-				if item >= filterNumber {
-					fmt.Fprintln(writer, line)
-				}
-			case "<=":
-				if item <= filterNumber {
-					fmt.Fprintln(writer, line)
-				}
-			default:
-				s := fmt.Sprintf("Unsupported comparison operator: %s\n", expression)
-				LoggerError(s)
 			}
 		}
+
+		linesChan <- line
+		num += 1
 	}
+
+	close(linesChan)
+	wg.Wait()
+	close(resultsChan)
 
 	if err := scanner.Err(); err != nil {
 		s := fmt.Sprintf("Reading standard input: %v\n", err)
 		LoggerError(s)
+	}
+
+	for row := range resultsChan {
+		fmt.Fprintln(writer, row)
 	}
 }

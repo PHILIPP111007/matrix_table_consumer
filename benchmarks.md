@@ -13,14 +13,29 @@ user    7m27.334s \
 sys     0m0.503s
 
 ```bash
-time python matrix_table_consumer/matrix_table_consumer.py \
-    -filter -o /home/phil/GitHub/matrix_table_consumer/data/test_1.vcf \
+time python matrix_table_consumer/matrix_table_consumer.py -filter \
+    -o /home/phil/GitHub/matrix_table_consumer/data/test_1.vcf \
     -vcf /home/phil/GitHub/matrix_table_consumer/data/ALL.chr1.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz \
     -i "QUAL > 100" \
-    -gzip
+    -gzip \
+    -num_cpu 1
 ```
 
 time: \
-real    4m6.311s \
-user    4m16.073s \
-sys     0m12.961s
+real    5m56.174s \
+user    8m53.375s \
+sys     0m43.027s
+
+```bash
+time python matrix_table_consumer/matrix_table_consumer.py -filter \
+    -o /home/phil/GitHub/matrix_table_consumer/data/test_1.vcf \
+    -vcf /home/phil/GitHub/matrix_table_consumer/data/ALL.chr1.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz \
+    -i "QUAL > 100" \
+    -gzip \
+    -num_cpu 7
+```
+
+time: \
+real    3m37.825s \
+user    17m21.532s \
+sys     1m10.984s

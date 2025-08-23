@@ -54,3 +54,48 @@ func ParallelExtractRows(lines <-chan string, wg *sync.WaitGroup, output chan<- 
 		output <- extractRow(line)
 	}
 }
+
+func ParallelFilterRows(lines <-chan string, wg *sync.WaitGroup, output chan<- string, key string, expression string, filterNumber int) {
+	defer wg.Done()
+
+	for line := range lines {
+		lineList := strings.Split(line, "\t")
+
+		if key == "QUAL" {
+			itemValue := lineList[5]
+
+			if itemValue == "." {
+				continue
+			}
+
+			item, err := strconv.Atoi(itemValue)
+			if err != nil {
+				s := fmt.Sprintf("Skipping invalid value: %s\n", err)
+				LoggerError(s)
+				continue
+			}
+
+			switch expression {
+			case ">":
+				if item > filterNumber {
+					output <- line
+				}
+			case "<":
+				if item < filterNumber {
+					output <- line
+				}
+			case ">=":
+				if item >= filterNumber {
+					output <- line
+				}
+			case "<=":
+				if item <= filterNumber {
+					output <- line
+				}
+			default:
+				s := fmt.Sprintf("Unsupported comparison operator: %s\n", expression)
+				LoggerError(s)
+			}
+		}
+	}
+}

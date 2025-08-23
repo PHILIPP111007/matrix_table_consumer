@@ -49,7 +49,13 @@ Collect.restype = ctypes.c_char_p
 Count.argtypes = [ctypes.c_char_p, ctypes.c_bool]
 Count.restype = ctypes.c_int
 
-Filter.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_char_p, ctypes.c_bool]
+Filter.argtypes = [
+    ctypes.c_char_p,
+    ctypes.c_char_p,
+    ctypes.c_char_p,
+    ctypes.c_bool,
+    ctypes.c_int,
+]
 Filter.restype = None
 
 
@@ -297,7 +303,7 @@ class MatrixTableConsumer:
 
 class VCFTools:
     def filter(
-        self, include: str, input_vcf: str, output_vcf: str, is_gzip: bool
+        self, include: str, input_vcf: str, output_vcf: str, is_gzip: bool, num_cpu: int
     ) -> None:
         if not os.path.exists(input_vcf):
             logger_error("Input vcf not found")
@@ -311,7 +317,7 @@ class VCFTools:
         input_vcf_encoded = input_vcf.encode("utf-8")
         output_vcf_encoded = output_vcf.encode("utf-8")
 
-        Filter(include_encoded, input_vcf_encoded, output_vcf_encoded, is_gzip)
+        Filter(include_encoded, input_vcf_encoded, output_vcf_encoded, is_gzip, num_cpu)
 
 
 if __name__ == "__main__":
@@ -336,6 +342,14 @@ if __name__ == "__main__":
         "-o", "--output", required=False, type=str, help="Output VCF file."
     )
     parser.add_argument("-gzip", required=False, action="store_true", help="Is gzip.")
+    parser.add_argument(
+        "-num_cpu",
+        "--num_cpu",
+        type=int,
+        required=False,
+        default=1,
+        help="Number CPUs.",
+    )
 
     args = parser.parse_args()
 
@@ -345,6 +359,7 @@ if __name__ == "__main__":
             input_vcf: str = args.vcf
             output_vcf: str = args.output
             is_gzip: bool = args.gzip
+            num_cpu: bool = args.num_cpu
 
             if include and input_vcf and output_vcf:
                 vcftools = VCFTools()
@@ -353,6 +368,7 @@ if __name__ == "__main__":
                     input_vcf=input_vcf,
                     output_vcf=output_vcf,
                     is_gzip=is_gzip,
+                    num_cpu=num_cpu,
                 )
             else:
                 logger_error("Provide args")
