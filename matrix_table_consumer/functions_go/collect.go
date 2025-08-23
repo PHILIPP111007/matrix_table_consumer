@@ -47,10 +47,11 @@ func Collect(num_rows int, start_row int, vcf_path string, is_gzip bool, num_cpu
 
 	flag := false
 	rows := make([]*VCFContainer, 0)
-	rows_count := 0
+	rows_count := 1
+	num := 0
 
-	linesChan := make(chan string, 10_000)
-	resultsChan := make(chan *VCFContainer, 10_000)
+	linesChan := make(chan string, 100_000)
+	resultsChan := make(chan *VCFContainer, 200_000)
 
 	wg := sync.WaitGroup{}
 	wg.Add(num_cpu)
@@ -64,12 +65,14 @@ func Collect(num_rows int, start_row int, vcf_path string, is_gzip bool, num_cpu
 	buf := make([]byte, maxTokenSize)
 	scanner.Buffer(buf, maxTokenSize)
 
-	for scanner.Scan() && strings.HasPrefix(scanner.Text(), "#") {
-	}
-
-	bar := New(num_rows, WithDescription("Collecting data"))
+	// bar := New(num_rows, WithDescription("Collecting data"))
 
 	for scanner.Scan() {
+		if strings.HasPrefix(scanner.Text(), "#") {
+			continue
+		}
+		fmt.Println(start_row, rows_count)
+
 		if rows_count >= start_row+num_rows {
 			flag = false
 			break
@@ -77,10 +80,22 @@ func Collect(num_rows int, start_row int, vcf_path string, is_gzip bool, num_cpu
 			line := scanner.Text()
 			linesChan <- line
 		} else if start_row == rows_count {
+			fmt.Println("flag")
 			flag = true
 			line := scanner.Text()
 			linesChan <- line
 		}
+
+		// if num == 200_000 {
+		// 	num = 0
+		// 	len_chan := len(resultsChan)
+		// 	if len_chan != 0 {
+		// 		for range len_chan {
+		// 			row := <-resultsChan
+		// 			rows = append(rows, row)
+		// 		}
+		// 	}
+		// }
 
 		select {
 		case row := <-resultsChan:
@@ -90,9 +105,10 @@ func Collect(num_rows int, start_row int, vcf_path string, is_gzip bool, num_cpu
 		}
 
 		rows_count += 1
-		bar.Increment()
+		num += 1
+		// bar.Increment()
 	}
-	bar.Close()
+	// bar.Close()
 
 	close(linesChan)
 	wg.Wait()
