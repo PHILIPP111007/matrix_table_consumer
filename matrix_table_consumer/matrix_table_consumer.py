@@ -2,6 +2,8 @@ __version__ = "1.2.1"
 
 
 import os
+import sys
+import argparse
 import ctypes
 import shutil
 import multiprocessing
@@ -10,11 +12,11 @@ import gzip
 import dill
 import json
 from typing import TypeAlias
-from tqdm import tqdm
 
+from tqdm import tqdm
 import hail as hl
 
-from .functions_py.convert_rows_to_hail_c import convert_rows_to_hail_c
+from functions_py.convert_rows_to_hail_c import convert_rows_to_hail_c
 
 
 NUM_CPU = multiprocessing.cpu_count()
@@ -30,6 +32,7 @@ lib = ctypes.CDLL(library_path)
 CollectAll = lib.CollectAll
 Collect = lib.Collect
 Count = lib.Count
+Filter = lib.Filter
 
 CollectAll.argtypes = [ctypes.c_char_p, ctypes.c_bool, ctypes.c_int]
 CollectAll.restype = ctypes.c_char_p
@@ -46,6 +49,9 @@ Collect.restype = ctypes.c_char_p
 Count.argtypes = [ctypes.c_char_p, ctypes.c_bool]
 Count.restype = ctypes.c_int
 
+Filter.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_char_p, ctypes.c_bool]
+Filter.restype = None
+
 
 def get_time() -> str:
     return datetime.now().strftime("%d-%m-%Y %H:%M:%S")
@@ -61,7 +67,7 @@ def logger_error(s: str) -> None:
     print(f"[{t}] - ERROR - {s}")
 
 
-def string_to_binary(string: str):
+def string_to_binary(string: str) -> bytes:
     """Encode the string to bytes using UTF-8 encoding"""
 
     encoded_bytes = string.encode("utf-8")
@@ -85,7 +91,7 @@ def save_json(path: str, content: Content) -> None:
         json.dump(content, file, indent=4)
 
 
-def get_json(path: str) -> Content | None:
+def get_json(path: str) -> Content:
     if not os.path.exists(path):
         logger_error("File not found")
         exit(1)
@@ -106,7 +112,7 @@ def save_as_dill(path: str, content: Content) -> None:
         dill.dump(content, file)
 
 
-def load_dill(path: str) -> Content | None:
+def load_dill(path: str) -> Content:
     if not os.path.exists(path):
         logger_error("File not found")
         exit(1)
@@ -205,7 +211,7 @@ class MatrixTableConsumer:
 
     def prepare_metadata_for_saving(
         self, json_path: str, mt: hl.MatrixTable
-    ) -> Content:        
+    ) -> Content:
         progress_bar = tqdm(total=2, desc="Extracting fields")
 
         content = self._extract_fields(obj=mt)
@@ -289,5 +295,64 @@ class MatrixTableConsumer:
         return mt
 
 
+class VCFTools:
+    def filter(
+        self, include: str, input_vcf: str, output_vcf: str, is_gzip: bool
+    ) -> None:
+        if not os.path.exists(input_vcf):
+            logger_error("Input vcf not found")
+            exit(1)
+
+        if os.path.exists(output_vcf):
+            logger_error("File output vcf already exists")
+            exit(1)
+
+        include_encoded = include.encode("utf-8")
+        input_vcf_encoded = input_vcf.encode("utf-8")
+        output_vcf_encoded = output_vcf.encode("utf-8")
+
+        Filter(include_encoded, input_vcf_encoded, output_vcf_encoded, is_gzip)
+
+
 if __name__ == "__main__":
-    print(f"MatrixTableConsumer v{__version__}.")
+    print(f"MatrixTableConsumer v{__version__}.\n")
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        "-filter", required=False, action="store_true", help="Filter VCF by expression."
+    )
+    parser.add_argument(
+        "-i",
+        "--include",
+        required=False,
+        type=str,
+        help="Expression. Example: 'QUAL >= 30'",
+    )
+    parser.add_argument(
+        "-vcf", "--vcf", required=False, type=str, help="Input VCF file."
+    )
+    parser.add_argument(
+        "-o", "--output", required=False, type=str, help="Output VCF file."
+    )
+    parser.add_argument("-gzip", required=False, action="store_true", help="Is gzip.")
+
+    args = parser.parse_args()
+
+    if len(sys.argv) > 1:
+        if sys.argv[1] == "-filter":
+            include: str = args.include
+            input_vcf: str = args.vcf
+            output_vcf: str = args.output
+            is_gzip: bool = args.gzip
+
+            if include and input_vcf and output_vcf:
+                vcftools = VCFTools()
+                vcftools.filter(
+                    include=include,
+                    input_vcf=input_vcf,
+                    output_vcf=output_vcf,
+                    is_gzip=is_gzip,
+                )
+            else:
+                logger_error("Provide args")
