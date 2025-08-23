@@ -12,7 +12,7 @@ To compile Go modules with C types to work with Python run:
 ```bash
 export CGO_ENABLED=1
 
-go build -o functions.so -buildmode=c-shared functions/functions.go
+go build -o main.so -buildmode=c-shared functions_go/main.go
 ```
 
 We have a class `MatrixTableConsumer`, which performs operations on Hail matrix table:

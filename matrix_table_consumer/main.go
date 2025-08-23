@@ -13,6 +13,10 @@ import (
 	functions "functions_go/functions_go"
 )
 
+import (
+	"functions_go/functions_go"
+)
+
 //export CollectAll
 func CollectAll(vcf_path_pointer *C.char, is_gzip bool, num_cpu int) *C.char {
 	if num_cpu <= 0 {
@@ -49,7 +53,7 @@ func CollectAll(vcf_path_pointer *C.char, is_gzip bool, num_cpu int) *C.char {
 		reader = bufio.NewReader(f)
 	}
 
-	// Каналы для передачи строк и результатов
+	// Channels for transmitting strings and results
 	linesChan := make(chan string, 10_000)
 	resultsChan := make(chan *functions.VCFContainer, 10_000)
 
@@ -68,19 +72,19 @@ func CollectAll(vcf_path_pointer *C.char, is_gzip bool, num_cpu int) *C.char {
 	buf := make([]byte, maxTokenSize)
 	scanner.Buffer(buf, maxTokenSize)
 
-	// Пропускаем строки с символами # (заголовки)
+	// Skip lines with # symbols (headers)
 	for scanner.Scan() && strings.HasPrefix(scanner.Text(), "#") {
 	}
 
 	for scanner.Scan() {
 		line := scanner.Text()
 
-		// Проверяем, не заполнен ли канал результатов
+		// Check if the results channel is full
 		select {
 		case row := <-resultsChan:
 			rows = append(rows, row)
 		default:
-			// ничего не делаем, если канал пуст
+			// we do nothing if the channel is empty
 		}
 
 		linesChan <- line
@@ -101,7 +105,6 @@ func CollectAll(vcf_path_pointer *C.char, is_gzip bool, num_cpu int) *C.char {
 
 	functions.LoggerInfo("Extracting data...\n")
 
-	// Собираем результаты
 	for row := range resultsChan {
 		rows = append(rows, row)
 	}
@@ -160,7 +163,6 @@ func Collect(num_rows int, start_row int, vcf_path_pointer *C.char, is_gzip bool
 	rows := make([]*functions.VCFContainer, 0)
 	rows_count := 0
 
-	// Каналы для передачи строк и результатов
 	linesChan := make(chan string, 10_000)
 	resultsChan := make(chan *functions.VCFContainer, 10_000)
 
@@ -176,9 +178,10 @@ func Collect(num_rows int, start_row int, vcf_path_pointer *C.char, is_gzip bool
 	buf := make([]byte, maxTokenSize)
 	scanner.Buffer(buf, maxTokenSize)
 
-	// Пропускаем строки с символами # (заголовки)
 	for scanner.Scan() && strings.HasPrefix(scanner.Text(), "#") {
 	}
+
+	bar := functions_go.New(num_rows, functions_go.WithDescription("Collecting data"))
 
 	for scanner.Scan() {
 		if rows_count >= start_row+num_rows {
@@ -197,11 +200,13 @@ func Collect(num_rows int, start_row int, vcf_path_pointer *C.char, is_gzip bool
 		case row := <-resultsChan:
 			rows = append(rows, row)
 		default:
-			// ничего не делаем, если канал пуст
+			// we do nothing if the channel is empty
 		}
 
 		rows_count += 1
+		bar.Increment()
 	}
+	bar.Close()
 
 	close(linesChan)
 	wg.Wait()
@@ -212,7 +217,6 @@ func Collect(num_rows int, start_row int, vcf_path_pointer *C.char, is_gzip bool
 		functions.LoggerError(s)
 	}
 
-	// Собираем результаты
 	for row := range resultsChan {
 		rows = append(rows, row)
 	}

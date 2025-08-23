@@ -233,7 +233,6 @@ class MatrixTableConsumer:
         if not os.path.exists(self.vcf_path):
             logger_error("File not found")
             exit(1)
-        logger_info("Collecting data")
 
         vcf_path_encoded = self.vcf_path.encode("utf-8")
         s = Collect(num_rows, self.start_row, vcf_path_encoded, self.is_gzip, num_cpu)
@@ -241,7 +240,6 @@ class MatrixTableConsumer:
         rows = json.loads(s)
         self.start_row += len(rows)
 
-        logger_info("End")
         return rows
 
     def collect_all(self, num_cpu: int = 1) -> Rows:
@@ -263,7 +261,7 @@ class MatrixTableConsumer:
         c = Count(vcf_path_encoded, self.is_gzip)
         return c
 
-    def convert_rows_to_hail(self, rows: Rows) -> Rows:
+    def convert_rows_to_hail(self, rows: Rows) -> list[hl.Struct]:
         structs = convert_rows_to_hail_c(
             rows=rows, reference_genome=self.reference_genome
         )
