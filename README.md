@@ -33,6 +33,8 @@ We have a class `MatrixTableConsumer`, which performs operations on Hail matrix 
 
 - `MatrixTableConsumer().count` returns number of rows in the vcf file
 
+You can look at the `main.ipynb` file, which contains examples of using `MatrixTableConsumer`
+
 To run tests, use:
 
 ```bash
