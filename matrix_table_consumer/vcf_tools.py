@@ -37,16 +37,17 @@ def logger_error(s: str) -> None:
 
 
 class VCFRecord:
-    def __init__(self, chrom, pos, id, ref, alt, qual, filter, info):
+    def __init__(self, chrom, pos, id, ref, alt, qual, filter, info, format):
         self.chrom: str = chrom
-        self.pos = pos
-        self.id = id
-        self.ref = ref
-        self.alt = alt
-        self.qual = qual
-        self.filter = filter
-        self.info = info
-        self.samples = {}
+        self.pos: str = pos
+        self.id: str = id
+        self.ref: str = ref
+        self.alt: str = alt
+        self.qual: str = qual
+        self.filter: str = filter
+        self.info: str = info
+        self.format: str = format
+        self.samples: dict[str, str] = {}
 
     def add_sample(self, sample_name: str, sample_value: str):
         self.samples[sample_name] = sample_value
@@ -66,7 +67,8 @@ class VCFTools:
         qual = parts[5]
         filter = parts[6]
         info = parts[7]
-        record = VCFRecord(chrom, pos, id, ref, alt, qual, filter, info)
+        format = parts[8]
+        record = VCFRecord(chrom=chrom, pos=pos, id=id, ref=ref, alt=alt, qual=qual, filter=filter, info=info, format=format)
         samples_values = parts[9:]
         for sample_name, sample_value in zip(sample_names, samples_values):
             record.add_sample(sample_name, sample_value)
@@ -75,8 +77,8 @@ class VCFTools:
     def read_vcf_headers(self, vcf1: str, vcf2: str) -> list[str]:
         with open(vcf1, "r") as file1, open(vcf2, "r") as file2:
             headers: list[str] = []
-            samples_names = []
-            other_header = []
+            samples_names: list[str] = []
+            end_header_without_samples = []
 
             for line in file1:
                 if line.startswith("##"):
@@ -84,8 +86,10 @@ class VCFTools:
                         headers.append(line)
                 elif line.startswith("#CHROM"):
                     header_end = line.strip().split("\t")
-                    other_header = header_end[:9]
+                    end_header_without_samples = header_end[:9]
                     samples_names = header_end[9:]
+                else:
+                    break
 
             for line in file2:
                 if line.startswith("##"):
@@ -94,18 +98,26 @@ class VCFTools:
                 elif line.startswith("#CHROM"):
                     header_end = line.strip().split("\t")
                     samples_names += header_end[9:]
+                else:
+                    break
 
-            other_header = "\t".join(other_header) + "\t"
-            headers.append(other_header)
+            end_header_without_samples = "\t".join(end_header_without_samples) + "\t"
+            headers.append(end_header_without_samples)
             samples_names = sorted(samples_names)
             samples_names_str = "\t".join(samples_names).strip() + "\n"
             headers.append(samples_names_str)
             return headers
 
-    def read_vcf(self, file_name: str) -> list[VCFRecord]:
-        records = []
+    def read_and_merge_vcfs(
+        self, vcf1: str, vcf2: str
+    ) -> tuple[list[VCFRecord], list[str]]:
+        merged_records: defaultdict[tuple[str, str], list[VCFRecord]] = defaultdict(
+            list
+        )
         sample_names = []
-        with open(file_name, "r") as file:
+        all_samples = set()
+
+        with open(vcf1, "r") as file:
             for line in file:
                 if line.startswith("#CHROM"):
                     sample_names = line.strip().split("\t")[9:]
@@ -115,42 +127,48 @@ class VCFTools:
                 elif len(line.strip()) == 0:
                     break
                 record = self.parse_vcf_line(line, sample_names)
-                records.append(record)
-        return records
 
-    def merge_records(self, records1: list[VCFRecord], records2: list[VCFRecord]):
-        merged_records = defaultdict(list)
-        all_samples = set()
+                key = (record.chrom, record.pos)
+                merged_records[key].append(record)
+                all_samples.update(record.samples.keys())
 
-        for rec in records1:
-            key = (rec.chrom, rec.pos)
-            merged_records[key].append(rec)
+        with open(vcf2, "r") as file:
+            for line in file:
+                if line.startswith("#CHROM"):
+                    sample_names = line.strip().split("\t")[9:]
+                    continue
+                elif line.startswith("#"):
+                    continue
+                elif len(line.strip()) == 0:
+                    break
+                record = self.parse_vcf_line(line, sample_names)
 
-            all_samples.update(rec.samples.keys())
-
-        for rec in records2:
-            key = (rec.chrom, rec.pos)
-            merged_records[key].append(rec)
-            all_samples.update(rec.samples.keys())
+                key = (record.chrom, record.pos)
+                merged_records[key].append(record)
+                all_samples.update(record.samples.keys())
 
         sorted_keys: list[tuple[str, str]] = sorted(
             merged_records.keys(), key=lambda k: (k[0], k[1])
         )
-        merged_results = []
+
+        merged_results: list[VCFRecord] = []
         for key in sorted_keys:
             entries = merged_records[key]
             first_entry = entries[0]
+            pos = key[1]
             combined_record = VCFRecord(
-                first_entry.chrom,
-                str(key[1]),
-                first_entry.id,
-                first_entry.ref,
-                first_entry.alt,
-                first_entry.qual,
-                first_entry.filter,
-                first_entry.info,
+                chrom=first_entry.chrom,
+                pos=pos,
+                id=first_entry.id,
+                ref=first_entry.ref,
+                alt=first_entry.alt,
+                qual=first_entry.qual,
+                filter=first_entry.filter,
+                info=first_entry.info,
+                format=first_entry.format,
             )
             combined_samples = {}
+
             for entry in entries:
                 combined_samples.update(entry.samples)
             combined_record.samples = combined_samples
@@ -163,26 +181,29 @@ class VCFTools:
                 file.write(line)
 
     def write_merged_records(
-        self, merged_records: list[VCFRecord], samples_ordered, output_file
-    ):
+        self,
+        merged_records: list[VCFRecord],
+        samples_ordered: list[str],
+        output_file: str,
+    ) -> None:
         with open(output_file, "a") as file:
             for rec in merged_records:
                 columns = [
                     rec.chrom,
-                    str(rec.pos),
+                    rec.pos,
                     rec.id,
                     rec.ref,
                     rec.alt,
                     rec.qual,
                     rec.filter,
                     rec.info,
+                    rec.format,
                 ]
-                sample_values = []
+                sample_values: list[str] = []
                 for sample in samples_ordered:
+                    sample_data = "."
                     if sample in rec.samples:
                         sample_data = rec.samples[sample]
-                    else:
-                        sample_data = "."
                     sample_values.append(sample_data)
                 columns.extend(sample_values)
                 file.write("\t".join(columns) + "\n")
@@ -205,7 +226,13 @@ class VCFTools:
         Filter(include_encoded, input_vcf_encoded, output_vcf_encoded, is_gzip, num_cpu)
 
     def merge(
-        self, vcf1: str, vcf2: str, output_vcf: str, is_gzip: bool, num_cpu: int
+        self,
+        vcf1: str,
+        vcf2: str,
+        output_vcf: str,
+        is_gzip: bool,
+        is_gzip2: bool,
+        num_cpu: int,
     ) -> None:
         if not os.path.exists(vcf1):
             logger_error("Input vcf not found")
@@ -216,12 +243,9 @@ class VCFTools:
             sys.exit(1)
 
         headers = self.read_vcf_headers(vcf1, vcf2)
-
-        records_1 = self.read_vcf(vcf1)
-        records_2 = self.read_vcf(vcf2)
-
-        merged_records, all_samples = self.merge_records(records_1, records_2)
         self.write_headers(headers, output_vcf)
+
+        merged_records, all_samples = self.read_and_merge_vcfs(vcf1=vcf1, vcf2=vcf2)
         self.write_merged_records(merged_records, sorted(all_samples), output_vcf)
 
 
@@ -251,6 +275,7 @@ if __name__ == "__main__":
         "-o", "--output", required=False, type=str, help="Output VCF file."
     )
     parser.add_argument("-gzip", required=False, action="store_true", help="Is gzip.")
+    parser.add_argument("-gzip2", required=False, action="store_true", help="Is gzip.")
     parser.add_argument(
         "-num_cpu",
         "--num_cpu",
@@ -286,6 +311,7 @@ if __name__ == "__main__":
             vcf2: str = args.vcf2
             output_vcf: str = args.output
             is_gzip: bool = args.gzip
+            is_gzip2: bool = args.gzip2
             num_cpu: bool = args.num_cpu
 
             if vcf1 and vcf2 and output_vcf:
@@ -295,6 +321,7 @@ if __name__ == "__main__":
                     vcf2=vcf2,
                     output_vcf=output_vcf,
                     is_gzip=is_gzip,
+                    is_gzip2=is_gzip2,
                     num_cpu=num_cpu,
                 )
             else:

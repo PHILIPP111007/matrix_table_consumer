@@ -8,19 +8,19 @@
 ##FILTER=<ID=fa,Description="Genotypes called from fasta file">
 ##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
 #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	HG00096	HG00097	HG00099
-chr1	1310	.	T	C	100	fa	VT=S;AC=3	GT	0	0	0
-chr1	16	.	A	T	100	fa	VT=S;AC=3	GT	0	0	0
-chr1	26	.	C	T	100	fa	VT=S;AC=3	GT	0	0	0
-chr1	35	.	G	A	100	fa	VT=S;AC=2	GT	0	0	0
-chr1	40	.	T	C	100	fa	VT=M;AC=1	GT	0	0	0
-chr1	41	.	C	T	100	fa	VT=S;AC=4	GT	0	0	0
-chr1	42	.	T	C	100	fa	VT=S,I;AC=1,1	GT	0	0	0
-chr1	46	.	T	C	100	fa	VT=S;AC=1	GT	0	0	0
-chr1	47	.	G	A	100	fa	VT=S;AC=1	GT	0	0	0
-chr1	52	.	T	C	100	fa	VT=M;AC=1	GT	0	0	0
-chr1	57	.	T	C	100	fa	VT=S;AC=3	GT	0	0	0
-chr1	58	.	T	T	100	fa	VT=I;AC=4	GT	0	0	0
-chr1	59	.	T	A	100	fa	VT=S;AC=1	GT	0	0	0
-chr1	60	.	T	A	100	fa	VT=S;AC=1	GT	0	0	0
-chr1	61	.	C	T	100	fa	VT=M,M;AC=3,1	GT	0	0	0
-chr1	63	.	T	C	100	fa	VT=M,M;AC=1,1	GT	0	0	0
+chr1	1	.	T	C	100	fa	VT=S;AC=3	GT	0	0	0
+chr1	2	.	A	T	100	fa	VT=S;AC=3	GT	0	0	0
+chr1	3	.	C	T	100	fa	VT=S;AC=3	GT	0	0	0
+chr1	4	.	G	A	100	fa	VT=S;AC=2	GT	0	0	0
+chr1	5	.	T	C	100	fa	VT=M;AC=1	GT	0	0	0
+chr1	6	.	C	T	100	fa	VT=S;AC=4	GT	0	0	0
+chr1	7	.	T	C	100	fa	VT=S,I;AC=1,1	GT	0	0	0
+chr1	8	.	T	C	100	fa	VT=S;AC=1	GT	0	0	0
+chr1	9	.	G	A	100	fa	VT=S;AC=1	GT	0	0	0
+chr1	10	.	T	C	100	fa	VT=M;AC=1	GT	0	0	0
+chr1	11	.	T	C	100	fa	VT=S;AC=3	GT	0	0	0
+chr1	12	.	T	T	100	fa	VT=I;AC=4	GT	0	0	0
+chr1	13	.	T	A	100	fa	VT=S;AC=1	GT	0	0	0
+chr1	14	.	T	A	100	fa	VT=S;AC=1	GT	0	0	0
+chr1	15	.	C	T	100	fa	VT=M,M;AC=3,1	GT	0	0	0
+chr1	16	.	T	C	100	fa	VT=M,M;AC=1,1	GT	0	0	0

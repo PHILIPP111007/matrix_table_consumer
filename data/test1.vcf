@@ -9,16 +9,16 @@
 ##INFO=<ID=tumor_af,Number=1,Type=String,Description="">
 ##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
 #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	tumor
-chr1	1310	.	C	T	1	PASS	.	GT	0/1
-chr1	2573	.	C	T	2	PASS	.	GT	0/1
-chr1	3732	.	C	T	3	PASS	.	GT	0/1
-chr2	1234	.	C	T	4	PASS	.	GT	0/1
-chr2	1235	.	C	T	5	PASS	.	GT	0/1
-chr3	1234	.	C	T	6	PASS	.	GT	0/1
-chr4	1234	.	C	T	7	PASS	.	GT	0/1
-chr4	1235	.	C	T	8	PASS	.	GT	0/1
-chr4	1236	.	C	T	9	PASS	.	GT	0/1
-chr5	1234	.	C	T	10	PASS	.	GT	0/1
-chr6	1234	.	C	T	11	PASS	.	GT	0/1
-chr6	1235	.	C	T	12	PASS	.	GT	0/1
-chr6	1236	.	C	T	13	PASS	.	GT	0/1
+chr1	1	.	C	T	1	PASS	.	GT	0/1
+chr1	2	.	C	T	2	PASS	.	GT	0/1
+chr1	3	.	C	T	3	PASS	.	GT	0/1
+chr2	4	.	C	T	4	PASS	.	GT	0/1
+chr2	5	.	C	T	5	PASS	.	GT	0/1
+chr3	6	.	C	T	6	PASS	.	GT	0/1
+chr4	7	.	C	T	7	PASS	.	GT	0/1
+chr4	8	.	C	T	8	PASS	.	GT	0/1
+chr4	9	.	C	T	9	PASS	.	GT	0/1
+chr5	10	.	C	T	10	PASS	.	GT	0/1
+chr6	11	.	C	T	11	PASS	.	GT	0/1
+chr6	12	.	C	T	12	PASS	.	GT	0/1
+chr6	13	.	C	T	13	PASS	.	GT	0/1
