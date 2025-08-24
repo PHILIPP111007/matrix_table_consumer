@@ -13,7 +13,7 @@ user    7m27.334s \
 sys     0m0.503s
 
 ```bash
-time python matrix_table_consumer/matrix_table_consumer.py -filter \
+time python matrix_table_consumer/vcf_tools.py -filter \
     -o /home/phil/GitHub/matrix_table_consumer/data/test_1.vcf \
     -vcf /home/phil/GitHub/matrix_table_consumer/data/ALL.chr1.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz \
     -i "QUAL > 100" \
@@ -27,7 +27,7 @@ user    8m53.375s \
 sys     0m43.027s
 
 ```bash
-time python matrix_table_consumer/matrix_table_consumer.py -filter \
+time python matrix_table_consumer/vcf_tools.py -filter \
     -o /home/phil/GitHub/matrix_table_consumer/data/test_1.vcf \
     -vcf /home/phil/GitHub/matrix_table_consumer/data/ALL.chr1.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz \
     -i "QUAL > 100" \
@@ -41,7 +41,7 @@ user    14m40.598s \
 sys     0m55.775s
 
 ```bash
-time python matrix_table_consumer/matrix_table_consumer.py -filter \
+time python matrix_table_consumer/vcf_tools.py -filter \
     -o /home/phil/GitHub/matrix_table_consumer/data/test_1.vcf \
     -vcf /home/phil/GitHub/matrix_table_consumer/data/ALL.chr1.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz \
     -i "QUAL>=10 && AF<0.0" \

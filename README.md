@@ -42,7 +42,7 @@ You can look at the `benchmarks.md` file, which contains benchmark of my program
 Now you can filter `.vcf` files (currently only the `&&` operator is available):
 
 ```bash
-python matrix_table_consumer/matrix_table_consumer.py -filter \
+python matrix_table_consumer/vcf_tools.py -filter \
     -o ./data/test_1.vcf \
     -vcf ./data/ALL.chr1.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz \
     -i "QUAL>=90 && AF>=0.00001" \
