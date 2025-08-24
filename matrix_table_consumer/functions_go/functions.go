@@ -37,14 +37,14 @@ func extractRow(line string) *VCFContainer {
 	info := fields[7]
 
 	return &VCFContainer{
-		Qual:   qual8,
-		Pos:    pos32,
 		Chrom:  chrom,
 		Id:     id,
 		Ref:    ref,
 		Alt:    alt,
 		Filter: filter,
 		Info:   info,
+		Pos:    pos32,
+		Qual:   qual8,
 	}
 }
 
