@@ -50,6 +50,15 @@ python matrix_table_consumer/vcf_tools.py -filter \
     -num_cpu 7
 ```
 
+Now you can merge `.vcf` files:
+
+```bash
+python matrix_table_consumer/vcf_tools.py -merge \
+    -o ./data/test_merged.vcf \
+    -vcf ./data/test1.vcf \
+    -vcf2 ./data/test2.vcf
+```
+
 To run tests, use:
 
 ```bash

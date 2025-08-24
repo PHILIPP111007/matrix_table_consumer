@@ -9,9 +9,9 @@
 ##INFO=<ID=tumor_af,Number=1,Type=String,Description="">
 ##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
 #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	tumor
-chr1	13100	.	C	T	1	PASS	.	GT	0/1
-chr1	25734793	.	C	T	2	PASS	.	GT	0/1
-chr1	37323930	.	C	T	3	PASS	.	GT	0/1
+chr1	1310	.	C	T	1	PASS	.	GT	0/1
+chr1	2573	.	C	T	2	PASS	.	GT	0/1
+chr1	3732	.	C	T	3	PASS	.	GT	0/1
 chr2	1234	.	C	T	4	PASS	.	GT	0/1
 chr2	1235	.	C	T	5	PASS	.	GT	0/1
 chr3	1234	.	C	T	6	PASS	.	GT	0/1
