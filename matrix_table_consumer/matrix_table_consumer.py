@@ -18,6 +18,7 @@ import hail as hl
 from matrix_table_consumer.functions_py.convert_rows_to_hail import (
     convert_rows_to_hail_c,
 )
+from matrix_table_consumer.functions_py.logger import logger_error, logger_info
 
 
 NUM_CPU = multiprocessing.cpu_count()
@@ -47,20 +48,6 @@ Collect.restype = ctypes.c_char_p
 
 Count.argtypes = [ctypes.c_char_p, ctypes.c_bool]
 Count.restype = ctypes.c_int
-
-
-def get_time() -> str:
-    return datetime.now().strftime("%d-%m-%Y %H:%M:%S")
-
-
-def logger_info(s: str) -> None:
-    t = get_time()
-    print(f"[{t}] - INFO - {s}")
-
-
-def logger_error(s: str) -> None:
-    t = get_time()
-    print(f"[{t}] - ERROR - {s}")
 
 
 def string_to_binary(string: str) -> bytes:
