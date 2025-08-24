@@ -7,6 +7,7 @@ import (
 )
 
 import (
+	"fmt"
 	"functions_go/functions_go"
 )
 
@@ -39,6 +40,19 @@ func Filter(include_pointer *C.char, input_vcf_path_pointer *C.char, output_vcf_
 	output_vcf_path := C.GoString(output_vcf_path_pointer)
 
 	functions_go.Filter(include, input_vcf_path, output_vcf_path, is_gzip, num_cpu)
+}
+
+//export Merge
+func Merge(vcf1_pointer *C.char, vcf2_pointer *C.char, output_vcf_pointer *C.char, is_gzip bool, is_gzip2 bool) {
+	vcf1 := C.GoString(vcf1_pointer)
+	vcf2 := C.GoString(vcf2_pointer)
+	output_vcf := C.GoString(output_vcf_pointer)
+
+	err := functions_go.Merge(vcf1, vcf2, output_vcf, is_gzip, is_gzip2)
+	if err != nil {
+		s := fmt.Sprintf("Error: %v\n", err)
+		functions_go.LoggerError(s)
+	}
 }
 
 func main() {}

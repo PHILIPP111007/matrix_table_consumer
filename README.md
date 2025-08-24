@@ -54,9 +54,9 @@ Now you can merge `.vcf` files:
 
 ```bash
 python matrix_table_consumer/vcf_tools.py -merge \
-    -o ./data/test_merged.vcf \
     -vcf ./data/test1.vcf \
-    -vcf2 ./data/test2.vcf
+    -vcf2 ./data/test2.vcf \
+    -o ./data/test_merged.vcf
 ```
 
 To run tests, use:
