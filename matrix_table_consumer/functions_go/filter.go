@@ -5,7 +5,7 @@ import (
 	"compress/gzip"
 	"fmt"
 	"os"
-	"strconv"
+	"regexp"
 	"strings"
 	"sync"
 )
@@ -15,10 +15,24 @@ func Filter(include string, input_vcf_path string, output_vcf_path string, is_gz
 		num_cpu = 1
 	}
 
-	parts := strings.Split(include, " ")
-	key := parts[0]
-	expression := parts[1]
-	filterNumberStr := parts[2]
+	var expressions []map[string]string
+
+	parts := strings.SplitSeq(include, "&&")
+	for part := range parts {
+		matchExpr := regexp.MustCompile(`(\w+)\s*([=<>!]+)\s*(["']?[\d\.]+["']?)`)
+		matches := matchExpr.FindStringSubmatch(part)
+
+		if len(matches) != 4 {
+			s := fmt.Sprintf("Invalid expression format: %s\n", part)
+			LoggerError(s)
+		}
+
+		key := matches[1]
+		operator := matches[2]
+		value := matches[3]
+
+		expressions = append(expressions, map[string]string{"key": key, "operator": operator, "value": value})
+	}
 
 	var reader *bufio.Reader
 	if is_gzip {
@@ -65,30 +79,8 @@ func Filter(include string, input_vcf_path string, output_vcf_path string, is_gz
 	resultsChan := make(chan string, 500_000)
 	num := 0
 
-	switch key {
-	case "QUAL":
-		filterNumber, err := strconv.Atoi(filterNumberStr)
-		if err != nil {
-			s := fmt.Sprintf("Invalid number provided: %s\n", filterNumberStr)
-			LoggerError(s)
-			return
-		}
-
-		for range num_cpu {
-			go ParallelFilterRowsByQUAL(linesChan, &wg, resultsChan, key, expression, filterNumber)
-		}
-
-	case "AF":
-		filterNumber, err := strconv.ParseFloat(filterNumberStr, 64)
-		if err != nil {
-			s := fmt.Sprintf("Invalid number provided: %s\n", filterNumberStr)
-			LoggerError(s)
-			return
-		}
-
-		for range num_cpu {
-			go ParallelFilterRowsByAF(linesChan, &wg, resultsChan, key, expression, filterNumber)
-		}
+	for range num_cpu {
+		go ParallelFilterRows(linesChan, &wg, resultsChan, expressions)
 	}
 
 	for scanner.Scan() {
@@ -108,7 +100,6 @@ func Filter(include string, input_vcf_path string, output_vcf_path string, is_gz
 				}
 			}
 		}
-
 		linesChan <- line
 		num += 1
 	}

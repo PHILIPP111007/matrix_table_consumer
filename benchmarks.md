@@ -39,3 +39,17 @@ time: \
 real    2m48.941s \
 user    14m40.598s \
 sys     0m55.775s
+
+```bash
+time python matrix_table_consumer/matrix_table_consumer.py -filter \
+    -o /home/phil/GitHub/matrix_table_consumer/data/test_1.vcf \
+    -vcf /home/phil/GitHub/matrix_table_consumer/data/ALL.chr1.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz \
+    -i "QUAL>=10 && AF<0.0" \
+    -gzip \
+    -num_cpu 7
+```
+
+time: \
+real    3m51.254s \
+user    20m3.621s \
+sys     1m18.468s
