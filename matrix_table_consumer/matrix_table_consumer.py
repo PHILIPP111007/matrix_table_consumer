@@ -16,7 +16,7 @@ from typing import TypeAlias
 from tqdm import tqdm
 import hail as hl
 
-from .functions_py.convert_rows_to_hail_c import convert_rows_to_hail_c
+from functions_py.convert_rows_to_hail import convert_rows_to_hail_c
 
 
 NUM_CPU = multiprocessing.cpu_count()
@@ -100,7 +100,7 @@ def save_json(path: str, content: Content) -> None:
 def get_json(path: str) -> Content:
     if not os.path.exists(path):
         logger_error("File not found")
-        exit(1)
+        sys.exit(1)
 
     with open(path, "r") as file:
         content = json.load(file)
@@ -121,7 +121,7 @@ def save_as_dill(path: str, content: Content) -> None:
 def load_dill(path: str) -> Content:
     if not os.path.exists(path):
         logger_error("File not found")
-        exit(1)
+        sys.exit(1)
 
     with open(path, "rb") as file:
         content = dill.load(file, recurse=True)
@@ -244,7 +244,7 @@ class MatrixTableConsumer:
     def collect(self, num_rows: int, num_cpu: int = 1) -> Rows:
         if not os.path.exists(self.vcf_path):
             logger_error("File not found")
-            exit(1)
+            sys.exit(1)
 
         vcf_path_encoded = self.vcf_path.encode("utf-8")
         s = Collect(num_rows, self.start_row, vcf_path_encoded, self.is_gzip, num_cpu)
@@ -257,7 +257,7 @@ class MatrixTableConsumer:
     def collect_all(self, num_cpu: int = 1) -> Rows:
         if not os.path.exists(self.vcf_path):
             logger_error("File not found")
-            exit(1)
+            sys.exit(1)
         logger_info("Collecting data")
 
         vcf_path_encoded = self.vcf_path.encode("utf-8")
@@ -307,11 +307,11 @@ class VCFTools:
     ) -> None:
         if not os.path.exists(input_vcf):
             logger_error("Input vcf not found")
-            exit(1)
+            sys.exit(1)
 
         if os.path.exists(output_vcf):
             logger_error("File output vcf already exists")
-            exit(1)
+            sys.exit(1)
 
         include_encoded = include.encode("utf-8")
         input_vcf_encoded = input_vcf.encode("utf-8")

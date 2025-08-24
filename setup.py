@@ -49,8 +49,8 @@ class BuildGoExtension(build_ext):
 ext_modules = [
     Extension("main.so", sources=[]),
     Extension(
-        "matrix_table_consumer.functions_py.convert_rows_to_hail_c",
-        sources=["matrix_table_consumer/functions_py/convert_rows_to_hail_c.py"],
+        "matrix_table_consumer.functions_py.convert_rows_to_hail",
+        sources=["matrix_table_consumer/functions_py/convert_rows_to_hail.py"],
         language="c",
     ),
 ]
