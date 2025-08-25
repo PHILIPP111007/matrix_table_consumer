@@ -39,7 +39,7 @@ You can look at the `main.ipynb` file, which contains examples of using `MatrixT
 
 You can look at the `benchmarks.md` file, which contains benchmark of my program and bcftools
 
-Now you can filter `.vcf` files (currently only the `&&` operator is available):
+You can filter `.vcf` files (currently only the `&&` operator is available):
 
 ```bash
 python matrix_table_consumer/vcf_tools.py -filter \
@@ -50,7 +50,7 @@ python matrix_table_consumer/vcf_tools.py -filter \
     -num_cpu 7
 ```
 
-Now you can merge `.vcf` files:
+You can merge `.vcf` files:
 
 ```bash
 python matrix_table_consumer/vcf_tools.py -merge \
