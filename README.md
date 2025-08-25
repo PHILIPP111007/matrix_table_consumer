@@ -39,7 +39,7 @@ You can look at the `main.ipynb` file, which contains examples of using `MatrixT
 
 You can look at the `benchmarks.md` file, which contains benchmark of my program and bcftools
 
-Now you can filter `.vcf` files (currently only the `&&` operator is available):
+You can filter `.vcf` files (currently only the `&&` operator is available):
 
 ```bash
 python matrix_table_consumer/vcf_tools.py -filter \
@@ -48,6 +48,15 @@ python matrix_table_consumer/vcf_tools.py -filter \
     -i "QUAL>=90 && AF>=0.00001" \
     -gzip \
     -num_cpu 7
+```
+
+You can merge `.vcf` files:
+
+```bash
+python matrix_table_consumer/vcf_tools.py -merge \
+    -vcf ./data/test1.vcf \
+    -vcf2 ./data/test2.vcf \
+    -o ./data/test_merged.vcf
 ```
 
 To run tests, use:

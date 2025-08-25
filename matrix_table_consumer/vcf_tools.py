@@ -3,6 +3,7 @@ import sys
 import argparse
 import ctypes
 from datetime import datetime
+from collections import defaultdict
 
 
 current_dir = os.path.dirname(__file__)
@@ -10,6 +11,7 @@ library_path = os.path.join(current_dir, "main.so")
 
 lib = ctypes.CDLL(library_path)
 Filter = lib.Filter
+Merge = lib.Merge
 
 Filter.argtypes = [
     ctypes.c_char_p,
@@ -19,6 +21,15 @@ Filter.argtypes = [
     ctypes.c_int,
 ]
 Filter.restype = None
+
+Merge.argtypes = [
+    ctypes.c_char_p,
+    ctypes.c_char_p,
+    ctypes.c_char_p,
+    ctypes.c_bool,
+    ctypes.c_bool,
+]
+Merge.restype = None
 
 
 def get_time() -> str:
@@ -53,12 +64,37 @@ class VCFTools:
 
         Filter(include_encoded, input_vcf_encoded, output_vcf_encoded, is_gzip, num_cpu)
 
+    def merge(
+        self,
+        vcf1: str,
+        vcf2: str,
+        output_vcf: str,
+        is_gzip: bool,
+        is_gzip2: bool,
+    ) -> None:
+        if not os.path.exists(vcf1):
+            logger_error("Input vcf not found")
+            sys.exit(1)
+
+        if not os.path.exists(vcf2):
+            logger_error("Input vcf not found")
+            sys.exit(1)
+
+        vcf1__encoded = vcf1.encode("utf-8")
+        vcf2__encoded = vcf2.encode("utf-8")
+        output_vcf_encoded = output_vcf.encode("utf-8")
+
+        Merge(vcf1__encoded, vcf2__encoded, output_vcf_encoded, is_gzip, is_gzip2)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
         "-filter", required=False, action="store_true", help="Filter VCF by expression."
+    )
+    parser.add_argument(
+        "-merge", required=False, action="store_true", help="Merge VCF files."
     )
     parser.add_argument(
         "-i",
@@ -71,9 +107,13 @@ if __name__ == "__main__":
         "-vcf", "--vcf", required=False, type=str, help="Input VCF file."
     )
     parser.add_argument(
+        "-vcf2", "--vcf2", required=False, type=str, help="Input VCF file."
+    )
+    parser.add_argument(
         "-o", "--output", required=False, type=str, help="Output VCF file."
     )
     parser.add_argument("-gzip", required=False, action="store_true", help="Is gzip.")
+    parser.add_argument("-gzip2", required=False, action="store_true", help="Is gzip.")
     parser.add_argument(
         "-num_cpu",
         "--num_cpu",
@@ -101,6 +141,24 @@ if __name__ == "__main__":
                     output_vcf=output_vcf,
                     is_gzip=is_gzip,
                     num_cpu=num_cpu,
+                )
+            else:
+                logger_error("Provide args")
+        elif sys.argv[1] == "-merge":
+            vcf1: str = args.vcf
+            vcf2: str = args.vcf2
+            output_vcf: str = args.output
+            is_gzip: bool = args.gzip
+            is_gzip2: bool = args.gzip2
+
+            if vcf1 and vcf2 and output_vcf:
+                vcftools = VCFTools()
+                vcftools.merge(
+                    vcf1=vcf1,
+                    vcf2=vcf2,
+                    output_vcf=output_vcf,
+                    is_gzip=is_gzip,
+                    is_gzip2=is_gzip2,
                 )
             else:
                 logger_error("Provide args")

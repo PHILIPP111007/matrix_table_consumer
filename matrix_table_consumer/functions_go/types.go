@@ -18,6 +18,19 @@ type VCFContainer struct {
 
 type Rows []*VCFContainer
 
+type VCFRecordWithSamples struct {
+	Chrom   string
+	Pos     string
+	ID      string
+	Ref     string
+	Alt     string
+	Qual    string
+	Filter  string
+	Info    string
+	Format  string
+	Samples map[string]string
+}
+
 // Tqdm introduces progress bar
 type Tqdm struct {
 	startTime   time.Time
