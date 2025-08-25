@@ -288,6 +288,9 @@ func readAndMergeVCFs(vcf1, vcf2, outputVCF string, is_gzip, is_gzip2 bool) erro
 		if err != nil {
 			return err
 		}
+		s := fmt.Sprintf("Chunk file saved (%s)\n", chunkFile)
+		LoggerInfo(s)
+
 		chunkFiles = append(chunkFiles, chunkFile)
 	}
 
@@ -322,6 +325,10 @@ func mergeSortedChunksAndWrite(chunkFiles []string, samplesList []string, output
 		for _, file := range files {
 			if file != nil {
 				file.Close()
+				if err := os.Remove(file.Name()); err != nil && !os.IsNotExist(err) {
+					s := fmt.Sprintf("Warning: failed to remove temporary file %s: %v\n", file.Name(), err)
+					LoggerError(s)
+				}
 			}
 		}
 	}()
@@ -331,7 +338,7 @@ func mergeSortedChunksAndWrite(chunkFiles []string, samplesList []string, output
 		file, err := os.Open(chunkFile)
 		if err != nil {
 			// Close any already opened files
-			for j := 0; j < chunkIndex; j++ {
+			for j := range chunkIndex {
 				files[j].Close()
 			}
 			return fmt.Errorf("opening chunk file %s: %v", chunkFile, err)
@@ -352,6 +359,9 @@ func mergeSortedChunksAndWrite(chunkFiles []string, samplesList []string, output
 			records = append(records, &record)
 		}
 		currentRecords[chunkIndex] = records
+
+		s := fmt.Sprintf("Chunk file loaded (%s)\n", chunkFile)
+		LoggerInfo(s)
 	}
 
 	activeChunks := len(currentRecords)
