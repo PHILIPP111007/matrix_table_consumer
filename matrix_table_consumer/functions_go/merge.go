@@ -327,31 +327,31 @@ func mergeSortedChunksAndWrite(chunkFiles []string, samplesList []string, output
 	}()
 
 	// Initialize files and decoders
-	for i, chunkFile := range chunkFiles {
+	for chunkIndex, chunkFile := range chunkFiles {
 		file, err := os.Open(chunkFile)
 		if err != nil {
 			// Close any already opened files
-			for j := 0; j < i; j++ {
+			for j := 0; j < chunkIndex; j++ {
 				files[j].Close()
 			}
 			return fmt.Errorf("opening chunk file %s: %v", chunkFile, err)
 		}
-		files[i] = file
-		decoders[i] = gob.NewDecoder(file)
+		files[chunkIndex] = file
+		decoders[chunkIndex] = gob.NewDecoder(file)
 
 		var records []*VCFRecordWithSamples
 		for {
 			var record VCFRecordWithSamples
-			err := decoders[i].Decode(&record)
+			err := decoders[chunkIndex].Decode(&record)
 			if err == io.EOF {
 				break
 			}
 			if err != nil {
-				return fmt.Errorf("decoding record from chunk %d: %v", i, err)
+				return fmt.Errorf("decoding record from chunk %d: %v", chunkIndex, err)
 			}
 			records = append(records, &record)
 		}
-		currentRecords[i] = records
+		currentRecords[chunkIndex] = records
 	}
 
 	activeChunks := len(currentRecords)
