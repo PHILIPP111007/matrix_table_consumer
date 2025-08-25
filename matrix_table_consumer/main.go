@@ -7,7 +7,6 @@ import (
 )
 
 import (
-	"fmt"
 	"functions_go/functions_go"
 )
 
@@ -48,11 +47,7 @@ func Merge(vcf1_pointer *C.char, vcf2_pointer *C.char, output_vcf_pointer *C.cha
 	vcf2 := C.GoString(vcf2_pointer)
 	output_vcf := C.GoString(output_vcf_pointer)
 
-	err := functions_go.Merge(vcf1, vcf2, output_vcf, is_gzip, is_gzip2)
-	if err != nil {
-		s := fmt.Sprintf("Error: %v\n", err)
-		functions_go.LoggerError(s)
-	}
+	functions_go.Merge(vcf1, vcf2, output_vcf, is_gzip, is_gzip2)
 }
 
 func main() {}

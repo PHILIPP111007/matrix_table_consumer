@@ -3,12 +3,18 @@ package functions_go
 import (
 	"bufio"
 	"compress/gzip"
+	"encoding/gob"
 	"fmt"
+	"io"
 	"maps"
 	"os"
+	"path/filepath"
+	"runtime"
 	"slices"
 	"sort"
+	"strconv"
 	"strings"
+	"sync"
 )
 
 type VCFRecord struct {
@@ -76,6 +82,10 @@ func parseVCFLine(line string, sampleNames []string) *VCFRecord {
 	}
 
 	return record
+}
+
+func remove_from_slice(slice []*VCFRecord, s int) []*VCFRecord {
+	return append(slice[:s], slice[s+1:]...)
 }
 
 // readVCFHeaders reads headers from two VCF files
@@ -164,106 +174,141 @@ func readVCFHeaders(vcf1, vcf2 string, is_gzip, is_gzip2 bool) ([]string, error)
 	return headers, nil
 }
 
-// readAndMergeVCFs reads and merges two VCF files
-func readAndMergeVCFs(vcf1, vcf2 string, is_gzip, is_gzip2 bool) ([]*VCFRecord, []string, error) {
-	mergedRecords := make(map[[2]string][]*VCFRecord)
+// readAndMergeVCFs reads and merges two VCF files with streaming processing for large files
+func readAndMergeVCFs(vcf1, vcf2 string, is_gzip, is_gzip2 bool) (*[]*VCFRecord, []string, error) {
+	bar := New(4, WithDescription("Merging data"))
+	defer bar.Close()
+
 	allSamples := make(map[string]bool)
+	tempDir, err := os.MkdirTemp("", "vcf_merge_chunks")
+	if err != nil {
+		return nil, nil, err
+	}
+	defer os.RemoveAll(tempDir)
 
-	processFile := func(filename string, is_gzip bool) error {
-		file, err := os.Open(filename)
-		if err != nil {
-			return err
-		}
-		defer file.Close()
+	recordChan := make(chan *VCFRecord, 100_000)
+	errorChan := make(chan error, 2)
+	doneChan := make(chan bool, 1)
 
-		var reader *bufio.Reader
+	var wg sync.WaitGroup
+	wg.Add(1)
 
-		if is_gzip {
-			gr, err := gzip.NewReader(file)
+	go func() {
+		defer wg.Done()
+		defer close(recordChan)
+
+		processFile := func(filename string, isGzip bool) error {
+			file, err := os.Open(filename)
 			if err != nil {
-				s := fmt.Sprintf("Error creating gzip reader: %v\n", err)
-				LoggerError(s)
+				return err
 			}
-			defer gr.Close()
+			defer file.Close()
 
-			reader = bufio.NewReader(gr)
-		} else {
-			reader = bufio.NewReader(file)
+			var reader io.Reader = file
+			if isGzip {
+				gr, err := gzip.NewReader(file)
+				if err != nil {
+					return fmt.Errorf("gzip error: %v", err)
+				}
+				defer gr.Close()
+				reader = gr
+			}
+
+			scanner := bufio.NewScanner(reader)
+			var sampleNames []string
+			recordCount := 0
+
+			for scanner.Scan() {
+				line := scanner.Text()
+				if strings.HasPrefix(line, "#CHROM") {
+					sampleNames = strings.Split(strings.TrimSpace(line), "\t")[9:]
+					continue
+				} else if strings.HasPrefix(line, "#") {
+					continue
+				} else if strings.TrimSpace(line) == "" {
+					break
+				}
+
+				record := parseVCFLine(line, sampleNames)
+				recordChan <- record
+
+				for sample := range record.Samples {
+					allSamples[sample] = true
+				}
+
+				recordCount++
+				if recordCount%10_000 == 0 {
+					runtime.Gosched()
+				}
+			}
+			return scanner.Err()
 		}
 
-		scanner := bufio.NewScanner(reader)
-		var sampleNames []string
+		if err := processFile(vcf1, is_gzip); err != nil {
+			errorChan <- err
+			return
+		}
+		bar.Increment()
 
-		for scanner.Scan() {
-			line := scanner.Text()
-			if strings.HasPrefix(line, "#CHROM") {
-				sampleNames = strings.Split(strings.TrimSpace(line), "\t")[9:]
-				continue
-			} else if strings.HasPrefix(line, "#") {
-				continue
-			} else if strings.TrimSpace(line) == "" {
+		if err := processFile(vcf2, is_gzip2); err != nil {
+			errorChan <- err
+			return
+		}
+		bar.Increment()
+
+		doneChan <- true
+	}()
+
+	chunkSize := 50_000
+	chunkRecords := make([]*VCFRecord, 0, chunkSize)
+	chunkCount := 0
+	chunkFiles := []string{}
+
+	processing := true
+	for processing {
+		select {
+		case record, ok := <-recordChan:
+			if !ok {
+				processing = false
 				break
 			}
 
-			record := parseVCFLine(line, sampleNames)
-			key := [2]string{record.Chrom, record.Pos}
-			mergedRecords[key] = append(mergedRecords[key], record)
-
-			for sample := range record.Samples {
-				allSamples[sample] = true
+			chunkRecords = append(chunkRecords, record)
+			if len(chunkRecords) >= chunkSize {
+				chunkFile, err := writeChunkToDisk(chunkRecords, tempDir, chunkCount)
+				if err != nil {
+					return nil, nil, err
+				}
+				chunkFiles = append(chunkFiles, chunkFile)
+				chunkRecords = make([]*VCFRecord, 0, chunkSize)
+				chunkCount++
 			}
-		}
 
-		return scanner.Err()
+		case err := <-errorChan:
+			return nil, nil, err
+
+		case <-doneChan:
+			// We continue to process the remaining records in the channel
+		}
 	}
 
-	// Processing both files
-	if err := processFile(vcf1, is_gzip); err != nil {
+	if len(chunkRecords) > 0 {
+		chunkFile, err := writeChunkToDisk(chunkRecords, tempDir, chunkCount)
+		if err != nil {
+			return nil, nil, err
+		}
+		chunkFiles = append(chunkFiles, chunkFile)
+	}
+
+	wg.Wait()
+	bar.Increment()
+
+	mergedResults, err := mergeSortedChunks(chunkFiles)
+	if err != nil {
 		return nil, nil, err
 	}
-	if err := processFile(vcf2, is_gzip2); err != nil {
-		return nil, nil, err
-	}
+	bar.Increment()
 
-	// Sorting keys
-	var keys [][2]string
-	for key := range mergedRecords {
-		keys = append(keys, key)
-	}
-
-	sort.Slice(keys, func(i, j int) bool {
-		if keys[i][0] == keys[j][0] {
-			return keys[i][1] < keys[j][1]
-		}
-		return keys[i][0] < keys[j][0]
-	})
-
-	// Creating merged records
-	var mergedResults []*VCFRecord
-	for _, key := range keys {
-		entries := mergedRecords[key]
-		firstEntry := entries[0]
-
-		combinedRecord := newVCFRecord(
-			firstEntry.Chrom,
-			key[1],
-			firstEntry.ID,
-			firstEntry.Ref,
-			firstEntry.Alt,
-			firstEntry.Qual,
-			firstEntry.Filter,
-			firstEntry.Info,
-			firstEntry.Format,
-		)
-
-		for _, entry := range entries {
-			maps.Copy(combinedRecord.Samples, entry.Samples)
-		}
-
-		mergedResults = append(mergedResults, combinedRecord)
-	}
-
-	// Converting a set of samples into a sorted list
 	samplesList := make([]string, 0, len(allSamples))
 	for sample := range allSamples {
 		samplesList = append(samplesList, sample)
@@ -271,6 +316,181 @@ func readAndMergeVCFs(vcf1, vcf2 string, is_gzip, is_gzip2 bool) ([]*VCFRecord, 
 	sort.Strings(samplesList)
 
 	return mergedResults, samplesList, nil
+}
+
+func mergeSortedChunks(chunkFiles []string) (*[]*VCFRecord, error) {
+	if len(chunkFiles) == 0 {
+		return &[]*VCFRecord{}, nil
+	}
+
+	files := make([]*os.File, len(chunkFiles))
+	decoders := make([]*gob.Decoder, len(chunkFiles))
+	currentRecords := make(map[int][]*VCFRecord)
+
+	// Initialize files and decoders
+	for i, chunkFile := range chunkFiles {
+		file, err := os.Open(chunkFile)
+		if err != nil {
+			// Close any already opened files
+			for j := 0; j < i; j++ {
+				files[j].Close()
+			}
+			return nil, fmt.Errorf("opening chunk file %s: %v", chunkFile, err)
+		}
+		files[i] = file
+		decoders[i] = gob.NewDecoder(file)
+
+		var records []*VCFRecord
+		for {
+			var record VCFRecord
+			err := decoders[i].Decode(&record)
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				return nil, fmt.Errorf("decoding record from chunk %d: %v", i, err)
+			}
+			records = append(records, &record)
+		}
+		currentRecords[i] = records
+	}
+
+	defer func() {
+		for _, file := range files {
+			if file != nil {
+				file.Close()
+			}
+		}
+	}()
+
+	var mergedResults []*VCFRecord
+	activeChunks := len(currentRecords)
+
+	for activeChunks > 0 {
+		// Find the minimum record
+		var minRecord *VCFRecord
+		var minChunkIndex int = -1
+
+		for chunkIndex, records := range currentRecords {
+			if len(records) == 0 {
+				continue
+			}
+
+			currentRecord := records[0]
+			if minRecord == nil {
+				minRecord = currentRecord
+				minChunkIndex = chunkIndex
+				continue
+			}
+
+			// Compare chromosome and position
+			if currentRecord.Chrom < minRecord.Chrom {
+				minRecord = currentRecord
+				minChunkIndex = chunkIndex
+			} else if currentRecord.Chrom == minRecord.Chrom {
+				pos1, err1 := strconv.Atoi(currentRecord.Pos)
+				pos2, err2 := strconv.Atoi(minRecord.Pos)
+				if err1 != nil || err2 != nil {
+					continue
+				}
+				if pos1 < pos2 {
+					minRecord = currentRecord
+					minChunkIndex = chunkIndex
+				}
+			}
+		}
+
+		if minChunkIndex == -1 {
+			break // All records processed
+		}
+
+		// Collect ALL records with the same key from ALL chunks
+		key := [2]string{minRecord.Chrom, minRecord.Pos}
+		var recordsWithSameKey []*VCFRecord
+		recordsWithSameKey = append(recordsWithSameKey, minRecord)
+
+		currentRecords[minChunkIndex] = currentRecords[minChunkIndex][1:]
+
+		if len(currentRecords[minChunkIndex]) == 0 {
+			delete(currentRecords, minChunkIndex)
+			activeChunks--
+		}
+
+		// Check other chunks for records with the same key
+		for chunkIndex, records := range currentRecords {
+			if len(records) == 0 {
+				continue
+			}
+
+			for i, record := range records {
+				if record.Chrom == key[0] && record.Pos == key[1] {
+					recordsWithSameKey = append(recordsWithSameKey, record)
+					currentRecords[chunkIndex] = remove_from_slice(currentRecords[chunkIndex], i)
+				}
+
+				if len(currentRecords[chunkIndex]) == 0 {
+					delete(currentRecords, chunkIndex)
+					activeChunks--
+				}
+			}
+		}
+		// Merge all records with the same key
+		mergedRecord := mergeRecordsForKey(key, recordsWithSameKey)
+		mergedResults = append(mergedResults, mergedRecord)
+	}
+	return &mergedResults, nil
+}
+
+// writeChunkToDisk writes a chunk of records to disk and returns the filename
+func writeChunkToDisk(records []*VCFRecord, tempDir string, chunkCount int) (string, error) {
+	// Sort records within chunk
+	sort.Slice(records, func(i, j int) bool {
+		if records[i].Chrom == records[j].Chrom {
+			return records[i].Pos < records[j].Pos
+		}
+		return records[i].Chrom < records[j].Chrom
+	})
+
+	chunkFile := filepath.Join(tempDir, fmt.Sprintf("chunk_%d.gob", chunkCount))
+	file, err := os.Create(chunkFile)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+
+	encoder := gob.NewEncoder(file)
+	for _, record := range records {
+		if err := encoder.Encode(record); err != nil {
+			return "", err
+		}
+	}
+
+	return chunkFile, nil
+}
+
+// mergeRecordsForKey merges all records for a specific key
+func mergeRecordsForKey(key [2]string, records []*VCFRecord) *VCFRecord {
+	if len(records) == 0 {
+		return nil
+	}
+
+	firstRecord := records[0]
+	mergedRecord := newVCFRecord(
+		firstRecord.Chrom,
+		key[1],
+		firstRecord.ID,
+		firstRecord.Ref,
+		firstRecord.Alt,
+		firstRecord.Qual,
+		firstRecord.Filter,
+		firstRecord.Info,
+		firstRecord.Format,
+	)
+
+	for _, record := range records {
+		maps.Copy(mergedRecord.Samples, record.Samples)
+	}
+	return mergedRecord
 }
 
 // writeHeaders writes headers to the output file
@@ -299,7 +519,7 @@ func writeHeaders(headerLines []string, outputFile string) error {
 }
 
 // writeMergedRecords writes merged records to a file
-func writeMergedRecords(mergedRecords []*VCFRecord, samplesOrdered []string, outputFile string) error {
+func writeMergedRecords(mergedRecords *[]*VCFRecord, samplesOrdered []string, outputFile string) error {
 	file, err := os.OpenFile(outputFile, os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
@@ -307,7 +527,7 @@ func writeMergedRecords(mergedRecords []*VCFRecord, samplesOrdered []string, out
 	defer file.Close()
 
 	writer := bufio.NewWriter(file)
-	for _, rec := range mergedRecords {
+	for _, rec := range *mergedRecords {
 		columns := []string{
 			rec.Chrom,
 			rec.Pos,
@@ -322,7 +542,7 @@ func writeMergedRecords(mergedRecords []*VCFRecord, samplesOrdered []string, out
 
 		var sampleValues []string
 		for _, sample := range samplesOrdered {
-			sampleData := "."
+			sampleData := "./." // значение по умолчанию
 			if val, exists := rec.Samples[sample]; exists {
 				sampleData = val
 			}
@@ -334,25 +554,27 @@ func writeMergedRecords(mergedRecords []*VCFRecord, samplesOrdered []string, out
 			return err
 		}
 	}
-
 	return writer.Flush()
 }
 
 // Merge combines two VCF files
-func Merge(vcf1, vcf2, outputVCF string, is_gzip, is_gzip2 bool) error {
+func Merge(vcf1, vcf2, outputVCF string, is_gzip, is_gzip2 bool) {
 	headers, err := readVCFHeaders(vcf1, vcf2, is_gzip, is_gzip2)
 	if err != nil {
-		return err
+		s := fmt.Sprintf("Error: %v\n", err)
+		LoggerError(s)
 	}
 
 	if err := writeHeaders(headers, outputVCF); err != nil {
-		return err
+		s := fmt.Sprintf("Error: %v\n", err)
+		LoggerError(s)
 	}
 
 	mergedRecords, allSamples, err := readAndMergeVCFs(vcf1, vcf2, is_gzip, is_gzip2)
 	if err != nil {
-		return err
+		s := fmt.Sprintf("Error: %v\n", err)
+		LoggerError(s)
 	}
 
-	return writeMergedRecords(mergedRecords, allSamples, outputVCF)
+	writeMergedRecords(mergedRecords, allSamples, outputVCF)
 }

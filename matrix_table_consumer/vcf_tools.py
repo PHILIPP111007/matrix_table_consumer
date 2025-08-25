@@ -27,7 +27,7 @@ Merge.argtypes = [
     ctypes.c_char_p,
     ctypes.c_char_p,
     ctypes.c_bool,
-    ctypes.c_bool
+    ctypes.c_bool,
 ]
 Merge.restype = None
 
@@ -44,7 +44,6 @@ def logger_info(s: str) -> None:
 def logger_error(s: str) -> None:
     t = get_time()
     print(f"[{t}] - ERROR - {s}")
-
 
 
 class VCFTools:
