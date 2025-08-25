@@ -102,6 +102,9 @@ func readVCFHeaders(vcf1, vcf2 string, is_gzip, is_gzip2 bool) ([]string, error)
 	}
 
 	scanner1 := bufio.NewScanner(reader1)
+	const maxTokenSize = 1 << 20
+	buf := make([]byte, maxTokenSize)
+	scanner1.Buffer(buf, maxTokenSize)
 	for scanner1.Scan() {
 		line := scanner1.Text()
 		if strings.HasPrefix(line, "##") {
@@ -137,6 +140,8 @@ func readVCFHeaders(vcf1, vcf2 string, is_gzip, is_gzip2 bool) ([]string, error)
 	}
 
 	scanner2 := bufio.NewScanner(reader2)
+	buf = make([]byte, maxTokenSize)
+	scanner2.Buffer(buf, maxTokenSize)
 	for scanner2.Scan() {
 		line := scanner2.Text()
 		if strings.HasPrefix(line, "##") {
@@ -202,6 +207,9 @@ func readAndMergeVCFs(vcf1, vcf2, outputVCF string, is_gzip, is_gzip2 bool) erro
 			}
 
 			scanner := bufio.NewScanner(reader)
+			const maxTokenSize = 1 << 20
+			buf := make([]byte, maxTokenSize)
+			scanner.Buffer(buf, maxTokenSize)
 			var sampleNames []string
 			recordCount := 0
 
