@@ -1,3 +1,5 @@
+# cython: language_level=3, boundscheck=False, wraparound=False, initializedcheck=False, cdivision=True, infer_types=True
+
 import cython
 from tqdm import tqdm
 import hail as hl
@@ -24,16 +26,14 @@ def convert_rows_to_hail_c(rows: list[dict], reference_genome: str) -> list[hl.S
 
         ref: str = row["REF"]
         alt: str = row["ALT"]
-        alleles: list = [ref, alt]
+        alleles: list[str] = [ref, alt]
 
         rsid: str = row["ID"]
-        qual: cython.float = row["QUAL"]
+        qual: cython.int = row["QUAL"]
         filters: str = row["FILTER"]
 
         info_dict: dict = {"info": row["INFO"]}
         info_struct: hl.Struct = hl.Struct(**info_dict)
-
-        entries: list = []
 
         row_fields: dict = {
             "locus": locus,
@@ -42,7 +42,7 @@ def convert_rows_to_hail_c(rows: list[dict], reference_genome: str) -> list[hl.S
             "qual": qual,
             "filters": filters,
             "info": info_struct,
-            "entries": entries,
+            "entries": [],
         }
 
         struct: hl.Struct = hl.Struct(**row_fields)

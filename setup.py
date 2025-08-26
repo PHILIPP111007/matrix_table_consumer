@@ -5,14 +5,6 @@ import subprocess
 from Cython.Build import cythonize
 
 
-cython_directives = {
-    "boundscheck": False,
-    "cdivision": True,
-    "wraparound": False,
-    "language_level": 3,
-}
-
-
 with open("README.md", "r", encoding="utf-8") as file:
     long_description = file.read()
 
