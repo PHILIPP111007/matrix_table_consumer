@@ -144,6 +144,9 @@ func EvaluateRow(row *VCFRow, expression *govaluate.EvaluableExpression) (bool, 
     
     // Добавляем INFO поля
     for key, value := range row.InfoFields {
+        valueParts := strings.Split(row.Info, ",")
+        value = valueParts[0]  // TODO
+
         if num, err := strconv.ParseFloat(value, 64); err == nil {
             parameters[key] = num
         } else if value == "true" {
