@@ -68,19 +68,3 @@ pytest
 > You may donate to [matrix_table_consumer](https://github.com/PHILIPP111007/matrix_table_consumer) project:
 >
 > * Ethereum: 0xE2e2D675a3843f4ED211BB93847ad18b0A6fe7c6
-
-
-
-
-
-
-
-
-
-
-
-python matrix_table_consumer/vcf_tools.py -filter \
-    -o ./data/test_1.vcf \
-    -vcf ./data/ALL.chr1.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz \
-    -i "QUAL>=90 && AF>=0.00001" \
-    -num_cpu 1
