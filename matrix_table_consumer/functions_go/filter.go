@@ -9,7 +9,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/Knetic/govaluate"
+	"github.com/PHILIPP111007/govaluate"
 )
 
 // VCFRow представляет распарсенную строку VCF
