@@ -5,7 +5,6 @@ import (
     "compress/gzip"
     "fmt"
     "os"
-    "regexp"
     "strconv"
     "strings"
     "sync"
@@ -288,6 +287,9 @@ func Filter(include string, input_vcf_path string, output_vcf_path string, is_gz
     defer outputFile.Close()
 
     scanner := bufio.NewScanner(reader)
+    const maxTokenSize = 1 << 21
+    buf := make([]byte, maxTokenSize)
+    scanner.Buffer(buf, maxTokenSize)   
     writer := bufio.NewWriter(outputFile)
     defer writer.Flush()
 

@@ -61,7 +61,7 @@ func Collect(num_rows int, start_row int, vcf_path string, is_gzip bool, num_cpu
 	}
 
 	scanner := bufio.NewScanner(reader)
-	const maxTokenSize = 1 << 20
+	const maxTokenSize = 1 << 21
 	buf := make([]byte, maxTokenSize)
 	scanner.Buffer(buf, maxTokenSize)
 
@@ -174,7 +174,7 @@ func CollectAll(vcf_path string, is_gzip bool, num_cpu int) string {
 	}
 
 	scanner := bufio.NewScanner(reader)
-	const maxTokenSize = 1 << 20
+	const maxTokenSize = 1 << 21
 	buf := make([]byte, maxTokenSize)
 	scanner.Buffer(buf, maxTokenSize)
 
@@ -265,7 +265,7 @@ func Count(vcf_path string, is_gzip bool) int {
 	rows_count := 0
 
 	scanner := bufio.NewScanner(reader)
-	const maxTokenSize = 1 << 20
+	const maxTokenSize = 1 << 21
 	buf := make([]byte, maxTokenSize)
 	scanner.Buffer(buf, maxTokenSize)
 
