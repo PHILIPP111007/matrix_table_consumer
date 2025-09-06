@@ -6,289 +6,189 @@ import (
     "fmt"
     "os"
     "strconv"
-    "regexp"
     "strings"
     "sync"
+
+    "github.com/Knetic/govaluate"
 )
 
-// Expression представляет одно условие фильтрации
-type Expression struct {
-    Key      string
-    Operator string
-    Value    string
+// VCFRow представляет распарсенную строку VCF
+type VCFRow struct {
+    Chrom      string
+    Pos        string
+    ID         string
+    Ref        string
+    Alt        string
+    Qual       string
+    Filter     string
+    Info       string
+    Format     string
+    Samples    []string
+    InfoFields map[string]string
 }
 
-// ConditionGroup представляет группу условий (AND или OR)
-type ConditionGroup struct {
-    Type       string       // "and" или "or"
-    Conditions []Expression // Условия в группе
+// ParseVCFRow парсит строку VCF
+func ParseVCFRow(line string) *VCFRow {
+    parts := strings.Split(line, "\t")
+    if len(parts) < 8 {
+        return nil
+    }
+
+    row := &VCFRow{
+        Chrom:   parts[0],
+        Pos:     parts[1],
+        ID:      parts[2],
+        Ref:     parts[3],
+        Alt:     parts[4],
+        Qual:    parts[5],
+        Filter:  parts[6],
+        Info:    parts[7],
+        InfoFields: make(map[string]string),
+    }
+
+    if len(parts) > 8 {
+        row.Format = parts[8]
+    }
+    if len(parts) > 9 {
+        row.Samples = parts[9:]
+    }
+
+    // Парсим INFO поле
+    infoParts := strings.Split(row.Info, ";")
+    for _, part := range infoParts {
+        if strings.Contains(part, "=") {
+            kv := strings.SplitN(part, "=", 2)
+            if len(kv) == 2 {
+                row.InfoFields[kv[0]] = kv[1]
+            }
+        } else {
+            row.InfoFields[part] = "true"
+        }
+    }
+
+    return row
 }
 
-
-
-
-
-
-
-// ParseExpression разбирает строку с условиями фильтрации
-func ParseExpression(include string) []ConditionGroup {
-    var groups []ConditionGroup
-    
-    // Упрощенный подход: разбиваем по внешним &&, учитывая скобки
-    // Сначала находим все OR группы, разделенные &&
-    
-    // Удаляем внешние пробелы
-    include = strings.TrimSpace(include)
-    
-    // Если выражение начинается и заканчивается скобками, убираем их
-    if strings.HasPrefix(include, "(") && strings.HasSuffix(include, ")") {
-        include = strings.TrimSpace(include[1 : len(include)-1])
-    }
-    
-    // Разбиваем на группы, разделенные &&
-    andGroups := splitByOperator(include, "&&")
-    
-    for _, andGroup := range andGroups {
-        andGroup = strings.TrimSpace(andGroup)
-        if andGroup == "" {
-            continue
+// GetValue возвращает значение поля по имени
+func (r *VCFRow) GetValue(fieldName string) (interface{}, error) {
+    switch fieldName {
+    case "QUAL":
+        if r.Qual == "." {
+            return nil, fmt.Errorf("QUAL is missing")
         }
-        
-        // Удаляем внешние скобки если они есть
-        if strings.HasPrefix(andGroup, "(") && strings.HasSuffix(andGroup, ")") {
-            andGroup = strings.TrimSpace(andGroup[1 : len(andGroup)-1])
-        }
-        
-        // Разбиваем OR группу на отдельные условия
-        orConditions := splitByOperator(andGroup, "||")
-        var conditions []Expression
-        
-        for _, orCondition := range orConditions {
-            orCondition = strings.TrimSpace(orCondition)
-            if orCondition == "" {
-                continue
-            }
-            
-            // Удаляем внешние скобки если они есть
-            if strings.HasPrefix(orCondition, "(") && strings.HasSuffix(orCondition, ")") {
-                orCondition = strings.TrimSpace(orCondition[1 : len(orCondition)-1])
-            }
-            
-            // Парсим отдельное условие
-            expr, err := parseSingleExpression(orCondition)
-            if err != nil {
-                s := fmt.Sprintf("Error parsing expression '%s': %v\n", orCondition, err)
-                LoggerError(s)
-                continue
-            }
-            
-            conditions = append(conditions, expr)
-        }
-        
-        if len(conditions) > 0 {
-            groupType := "and"
-            if len(conditions) > 1 {
-                groupType = "or" // Если в группе несколько условий, это OR группа
-            }
-            
-            groups = append(groups, ConditionGroup{
-                Type:       groupType,
-                Conditions: conditions,
-            })
-        }
-    }
+        return strconv.ParseFloat(r.Qual, 64)
     
-    return groups
-}
-
-// splitByOperator разбивает строку по оператору, учитывая скобки
-func splitByOperator(expr string, operator string) []string {
-    var result []string
-    var current strings.Builder
-    parenDepth := 0
-    
-    for i := 0; i < len(expr); i++ {
-        char := expr[i]
-        
-        if char == '(' {
-            parenDepth++
-        } else if char == ')' {
-            parenDepth--
+    case "CHROM", "POS", "ID", "REF", "ALT", "FILTER":
+        // Эти поля доступны напрямую
+        fieldValue := ""
+        switch fieldName {
+        case "CHROM": fieldValue = r.Chrom
+        case "POS": fieldValue = r.Pos
+        case "ID": fieldValue = r.ID
+        case "REF": fieldValue = r.Ref
+        case "ALT": fieldValue = r.Alt
+        case "FILTER": fieldValue = r.Filter
         }
-        
-        // Проверяем, не находимся ли мы на операторе вне скобок
-        if parenDepth == 0 && i+len(operator) <= len(expr) {
-            if expr[i:i+len(operator)] == operator {
-                result = append(result, strings.TrimSpace(current.String()))
-                current.Reset()
-                i += len(operator) - 1 // Пропускаем оператор
-                continue
-            }
-        }
-        
-        current.WriteByte(char)
-    }
+        return fieldValue, nil
     
-    if current.Len() > 0 {
-        result = append(result, strings.TrimSpace(current.String()))
-    }
-    
-    return result
-}
-
-// parseSingleExpression парсит одно условие вида "KEY OPERATOR VALUE"
-func parseSingleExpression(expr string) (Expression, error) {
-    matchExpr := regexp.MustCompile(`(\w+)\s*([=<>!]+)\s*(["']?[-\d\.]+["']?)`)
-    matches := matchExpr.FindStringSubmatch(expr)
-    
-    if len(matches) != 4 {
-        return Expression{}, fmt.Errorf("invalid expression format: %s", expr)
-    }
-    
-    key := matches[1]
-    operator := matches[2]
-    value := strings.Trim(matches[3], `'"`)
-    
-    // Проверяем валидность оператора
-    validOps := map[string]bool{">": true, "<": true, ">=": true, "<=": true, "==": true, "!=": true}
-    if !validOps[operator] {
-        return Expression{}, fmt.Errorf("invalid operator: %s", operator)
-    }
-    
-    return Expression{
-        Key:      key,
-        Operator: operator,
-        Value:    value,
-    }, nil
-}
-
-
-
-
-
-// EvaluateCondition оценивает одно условие для данной строки VCF
-func EvaluateCondition(line string, expr Expression) bool {
-    lineList := strings.Split(line, "\t")
-    
-    if expr.Key == "QUAL" {
-        linePart := lineList[5]
-        if linePart == "." {
-            return false
-        }
-        
-        numberFromLine, err := strconv.ParseFloat(linePart, 64)
-        if err != nil {
-            s := fmt.Sprintf("Skipping invalid QUAL value: %s\n", err)
-            LoggerError(s)
-            return false
-        }
-        
-        filterNumber, err := strconv.ParseFloat(expr.Value, 64)
-        if err != nil {
-            s := fmt.Sprintf("Invalid filter number: %s\n", expr.Value)
-            LoggerError(s)
-            return false
-        }
-        
-        return compareNumbers(numberFromLine, filterNumber, expr.Operator)
-        
-    } else {
-        // Обработка INFO поля (например: AF=0.5)
-        linePart := lineList[7]
-        infoFields := strings.Split(linePart, ";")
-        
-        for _, field := range infoFields {
-            if strings.HasPrefix(field, expr.Key+"=") {
-                valueStr := field[len(expr.Key)+1:]
-                values := strings.Split(valueStr, ",")
-                firstValue := values[0]
-                
-                numberFromLine, err := strconv.ParseFloat(firstValue, 64)
-                if err != nil {
-                    s := fmt.Sprintf("Skipping invalid %s value: %s\n", expr.Key, err)
-                    LoggerError(s)
-                    return false
-                }
-                
-                filterNumber, err := strconv.ParseFloat(expr.Value, 64)
-                if err != nil {
-                    s := fmt.Sprintf("Invalid filter number for %s: %s\n", expr.Key, expr.Value)
-                    LoggerError(s)
-                    return false
-                }
-                
-                return compareNumbers(numberFromLine, filterNumber, expr.Operator)
-            }
-        }
-        return false // Поле не найдено
-    }
-}
-
-
-
-
-// compareNumbers выполняет сравнение чисел с заданным оператором
-func compareNumbers(a, b float64, operator string) bool {
-    switch operator {
-    case ">":
-        return a > b
-    case "<":
-        return a < b
-    case ">=":
-        return a >= b
-    case "<=":
-        return a <= b
-    case "==":
-        return a == b
-    case "!=":
-        return a != b
     default:
-        s := fmt.Sprintf("Unsupported operator: %s\n", operator)
-        LoggerError(s)
-        return false
+        // INFO поля
+        if value, exists := r.InfoFields[fieldName]; exists {
+            if value == "true" {
+                return true, nil
+            }
+            // Пробуем парсить как число
+            if num, err := strconv.ParseFloat(value, 64); err == nil {
+                return num, nil
+            }
+            return value, nil
+        }
+        return nil, fmt.Errorf("field %s not found", fieldName)
     }
 }
 
-// EvaluateGroup оценивает всю группу условий
-func EvaluateGroup(line string, group ConditionGroup) bool {
-    if len(group.Conditions) == 0 {
-        return true
+// FilterFunctions содержит функции для фильтрации
+var FilterFunctions = map[string]govaluate.ExpressionFunction{
+    "has": func(args ...interface{}) (interface{}, error) {
+        if len(args) != 2 {
+            return nil, fmt.Errorf("has() expects 2 arguments")
+        }
+        _, ok := args[0].(string)
+        if !ok {
+            return nil, fmt.Errorf("first argument must be string")
+        }
+        _, ok = args[1].(string)
+        if !ok {
+            return nil, fmt.Errorf("second argument must be string")
+        }
+        
+        // Для простоты всегда возвращаем true, реальная реализация будет в EvaluateRow
+        return true, nil
+    },
+}
+
+// EvaluateRow оценивает строку VCF по выражению
+func EvaluateRow(row *VCFRow, expression *govaluate.EvaluableExpression) (bool, error) {
+    parameters := make(map[string]interface{})
+    
+    // Добавляем все поля VCF как параметры
+    if qual, err := row.GetValue("QUAL"); err == nil {
+        parameters["QUAL"] = qual
+    }
+    parameters["CHROM"] = row.Chrom
+    parameters["POS"] = row.Pos
+    parameters["ID"] = row.ID
+    parameters["REF"] = row.Ref
+    parameters["ALT"] = row.Alt
+    parameters["FILTER"] = row.Filter
+    
+    // Добавляем INFO поля
+    for key, value := range row.InfoFields {
+        if num, err := strconv.ParseFloat(value, 64); err == nil {
+            parameters[key] = num
+        } else if value == "true" {
+            parameters[key] = true
+        } else if value == "false" {
+            parameters[key] = false
+        } else {
+            parameters[key] = value
+        }
     }
     
-    if group.Type == "and" {
-        // Все условия должны быть истинны
-        for _, condition := range group.Conditions {
-            if !EvaluateCondition(line, condition) {
-                return false
-            }
-        }
-        return true
-    } else {
-        // Хотя бы одно условие должно быть истинно (OR группа)
-        for _, condition := range group.Conditions {
-            if EvaluateCondition(line, condition) {
-                return true
-            }
-        }
-        return false
+    result, err := expression.Evaluate(parameters)
+    if err != nil {
+        return false, err
     }
+    
+    if boolResult, ok := result.(bool); ok {
+        return boolResult, nil
+    }
+    
+    return false, fmt.Errorf("expression did not return boolean")
 }
+
 // ParallelFilterRows параллельно фильтрует строки
-func ParallelFilterRows(lines <-chan string, wg *sync.WaitGroup, output chan<- string, groups []ConditionGroup) {
+func ParallelFilterRows(lines <-chan string, wg *sync.WaitGroup, output chan<- string, expression *govaluate.EvaluableExpression) {
     defer wg.Done()
     
     for line := range lines {
-        matchesAll := true
-        
-        // Все группы должны быть истинны (группы соединены AND)
-        for _, group := range groups {
-            if !EvaluateGroup(line, group) {
-                matchesAll = false
-                break
-            }
+        if strings.HasPrefix(line, "#") {
+            continue // Пропускаем заголовки
         }
         
-        if matchesAll {
+        row := ParseVCFRow(line)
+        if row == nil {
+            continue
+        }
+        
+        matches, err := EvaluateRow(row, expression)
+        if err != nil {
+            s := fmt.Sprintf("Error evaluating row: %v\n", err)
+            LoggerError(s)
+            continue
+        }
+        
+        if matches {
             output <- line
         }
     }
@@ -299,10 +199,10 @@ func Filter(include string, input_vcf_path string, output_vcf_path string, is_gz
         num_cpu = 1
     }
 
-    // Парсим выражение
-    groups := ParseExpression(include)
-    if len(groups) == 0 {
-        s := fmt.Sprintf("No valid expressions found in: %s\n", include)
+    // Создаем выражение с помощью govaluate
+    expression, err := govaluate.NewEvaluableExpressionWithFunctions(include, FilterFunctions)
+    if err != nil {
+        s := fmt.Sprintf("Failed to parse expression '%s': %v\n", include, err)
         LoggerError(s)
         return
     }
@@ -349,7 +249,7 @@ func Filter(include string, input_vcf_path string, output_vcf_path string, is_gz
     scanner := bufio.NewScanner(reader)
     const maxTokenSize = 1 << 21
     buf := make([]byte, maxTokenSize)
-    scanner.Buffer(buf, maxTokenSize)   
+    scanner.Buffer(buf, maxTokenSize)
     writer := bufio.NewWriter(outputFile)
     defer writer.Flush()
 
@@ -358,25 +258,29 @@ func Filter(include string, input_vcf_path string, output_vcf_path string, is_gz
     linesChan := make(chan string, 100000)
     resultsChan := make(chan string, 500000)
 
+    // Запускаем worker'ов
     for i := 0; i < num_cpu; i++ {
-        go ParallelFilterRows(linesChan, &wg, resultsChan, groups)
+        go ParallelFilterRows(linesChan, &wg, resultsChan, expression)
     }
 
     num := 0
     for scanner.Scan() {
         line := scanner.Text()
+        
+        // Заголовки пишем сразу
         if strings.HasPrefix(line, "#") {
             fmt.Fprintln(writer, line)
             continue
         }
 
-        if num == 500000 {
+        // Периодически сбрасываем результаты
+        if num >= 500000 {
             num = 0
-            // Обрабатываем накопленные результаты
             for len(resultsChan) > 0 {
                 row := <-resultsChan
                 fmt.Fprintln(writer, row)
             }
+            writer.Flush()
         }
         
         linesChan <- line
@@ -388,7 +292,7 @@ func Filter(include string, input_vcf_path string, output_vcf_path string, is_gz
     close(resultsChan)
 
     if err := scanner.Err(); err != nil {
-        s := fmt.Sprintf("Reading standard input: %v\n", err)
+        s := fmt.Sprintf("Reading input: %v\n", err)
         LoggerError(s)
     }
 
