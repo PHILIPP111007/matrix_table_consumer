@@ -1,4 +1,4 @@
-# MatrixTableConsumer v1.2.3
+# MatrixTableConsumer v1.2.5
 
 To install this package run (you need to have Go):
 
@@ -12,7 +12,7 @@ To compile Go modules with C types to work with Python run:
 ```bash
 export CGO_ENABLED=1
 
-go build -o main.so -buildmode=c-shared functions_go/main.go
+go build -o main.so -buildmode=c-shared main.go
 ```
 
 We have a class `MatrixTableConsumer`, which performs operations on Hail matrix table:
@@ -39,13 +39,13 @@ You can look at the `main.ipynb` file, which contains examples of using `MatrixT
 
 You can look at the `benchmarks.md` file, which contains benchmark of my program and bcftools
 
-You can filter `.vcf` files (currently only the `&&` operator is available):
+You can filter `.vcf` and `.vcf.gz` files (`&&` and `||` operators is available):
 
 ```bash
 python matrix_table_consumer/vcf_tools.py -filter \
     -o ./data/test_1.vcf \
     -vcf ./data/ALL.chr1.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz \
-    -i "QUAL>=90 && AF>=0.00001" \
+    -i "(QUAL>=90 && AF>=0.00001) || AF>=0.001" \
     -gzip \
     -num_cpu 7
 ```

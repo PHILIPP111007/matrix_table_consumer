@@ -5,6 +5,20 @@ import (
 	"time"
 )
 
+type VCFRow struct {
+	Chrom      string
+	Pos        string
+	ID         string
+	Ref        string
+	Alt        string
+	Qual       string
+	Filter     string
+	Info       string
+	Format     string
+	Samples    []string
+	InfoFields map[string]string
+}
+
 type VCFContainer struct {
 	Chrom  string `json:"CHROM"`
 	Id     string `json:"ID"`
