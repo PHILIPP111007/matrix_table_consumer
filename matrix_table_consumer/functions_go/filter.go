@@ -12,21 +12,6 @@ import (
 	"github.com/PHILIPP111007/govaluate"
 )
 
-// VCFRow представляет распарсенную строку VCF
-type VCFRow struct {
-	Chrom      string
-	Pos        string
-	ID         string
-	Ref        string
-	Alt        string
-	Qual       string
-	Filter     string
-	Info       string
-	Format     string
-	Samples    []string
-	InfoFields map[string]string
-}
-
 // ParseVCFRow парсит строку VCF
 func ParseVCFRow(line string) *VCFRow {
 	parts := strings.Split(line, "\t")
