@@ -6,6 +6,7 @@ import (
     "fmt"
     "os"
     "strconv"
+    "regexp"
     "strings"
     "sync"
 )
@@ -23,91 +24,147 @@ type ConditionGroup struct {
     Conditions []Expression // Условия в группе
 }
 
+
+
+
+
+
+
 // ParseExpression разбирает строку с условиями фильтрации
 func ParseExpression(include string) []ConditionGroup {
     var groups []ConditionGroup
     
-    // Удаляем пробелы вокруг скобок для упрощения парсинга
-    include = strings.ReplaceAll(include, "(", " ( ")
-    include = strings.ReplaceAll(include, ")", " ) ")
-    include = strings.ReplaceAll(include, "&&", " && ")
-    include = strings.ReplaceAll(include, "||", " || ")
+    // Упрощенный подход: разбиваем по внешним &&, учитывая скобки
+    // Сначала находим все OR группы, разделенные &&
     
-    tokens := strings.Fields(include)
-    var currentGroup *ConditionGroup
-    var stack []*ConditionGroup
+    // Удаляем внешние пробелы
+    include = strings.TrimSpace(include)
     
-    for i := 0; i < len(tokens); i++ {
-        token := tokens[i]
-        
-        switch token {
-        case "(":
-            // Начало новой группы
-            newGroup := &ConditionGroup{}
-            stack = append(stack, currentGroup)
-            currentGroup = newGroup
-            
-        case ")":
-            // Конец текущей группы
-            if len(stack) > 0 {
-                parentGroup := stack[len(stack)-1]
-                stack = stack[:len(stack)-1]
-                
-                if parentGroup != nil {
-                    parentGroup.Conditions = append(parentGroup.Conditions, Expression{
-                        Key:      "GROUP",
-                        Operator: "GROUP",
-                        Value:    "", // Группа будет храниться в специальном поле
-                    })
-                    // Здесь нужно хранить ссылку на группу, но для простоты используем Value
-                }
-                currentGroup = parentGroup
-            }
-            
-        case "&&", "||":
-            if currentGroup == nil {
-                currentGroup = &ConditionGroup{Type: "and"}
-            }
-            currentGroup.Type = "and"
-            if token == "||" {
-                currentGroup.Type = "or"
-            }
-            
-        default:
-            // Это условие вида "KEY OPERATOR VALUE"
-            if i+2 < len(tokens) {
-                key := token
-                operator := tokens[i+1]
-                value := tokens[i+2]
-                i += 2
-                
-                // Проверяем валидность оператора
-                validOps := map[string]bool{">": true, "<": true, ">=": true, "<=": true, "==": true, "!=": true}
-                if !validOps[operator] {
-                    s := fmt.Sprintf("Invalid operator: %s\n", operator)
-                    LoggerError(s)
-                    continue
-                }
-                
-                if currentGroup == nil {
-                    currentGroup = &ConditionGroup{Type: "and"}
-                }
-                
-                currentGroup.Conditions = append(currentGroup.Conditions, Expression{
-                    Key:      key,
-                    Operator: operator,
-                    Value:    strings.Trim(value, `'"`),
-                })
-            }
-        }
+    // Если выражение начинается и заканчивается скобками, убираем их
+    if strings.HasPrefix(include, "(") && strings.HasSuffix(include, ")") {
+        include = strings.TrimSpace(include[1 : len(include)-1])
     }
     
-    if currentGroup != nil {
-        groups = append(groups, *currentGroup)
+    // Разбиваем на группы, разделенные &&
+    andGroups := splitByOperator(include, "&&")
+    
+    for _, andGroup := range andGroups {
+        andGroup = strings.TrimSpace(andGroup)
+        if andGroup == "" {
+            continue
+        }
+        
+        // Удаляем внешние скобки если они есть
+        if strings.HasPrefix(andGroup, "(") && strings.HasSuffix(andGroup, ")") {
+            andGroup = strings.TrimSpace(andGroup[1 : len(andGroup)-1])
+        }
+        
+        // Разбиваем OR группу на отдельные условия
+        orConditions := splitByOperator(andGroup, "||")
+        var conditions []Expression
+        
+        for _, orCondition := range orConditions {
+            orCondition = strings.TrimSpace(orCondition)
+            if orCondition == "" {
+                continue
+            }
+            
+            // Удаляем внешние скобки если они есть
+            if strings.HasPrefix(orCondition, "(") && strings.HasSuffix(orCondition, ")") {
+                orCondition = strings.TrimSpace(orCondition[1 : len(orCondition)-1])
+            }
+            
+            // Парсим отдельное условие
+            expr, err := parseSingleExpression(orCondition)
+            if err != nil {
+                s := fmt.Sprintf("Error parsing expression '%s': %v\n", orCondition, err)
+                LoggerError(s)
+                continue
+            }
+            
+            conditions = append(conditions, expr)
+        }
+        
+        if len(conditions) > 0 {
+            groupType := "and"
+            if len(conditions) > 1 {
+                groupType = "or" // Если в группе несколько условий, это OR группа
+            }
+            
+            groups = append(groups, ConditionGroup{
+                Type:       groupType,
+                Conditions: conditions,
+            })
+        }
     }
     
     return groups
 }
+
+// splitByOperator разбивает строку по оператору, учитывая скобки
+func splitByOperator(expr string, operator string) []string {
+    var result []string
+    var current strings.Builder
+    parenDepth := 0
+    
+    for i := 0; i < len(expr); i++ {
+        char := expr[i]
+        
+        if char == '(' {
+            parenDepth++
+        } else if char == ')' {
+            parenDepth--
+        }
+        
+        // Проверяем, не находимся ли мы на операторе вне скобок
+        if parenDepth == 0 && i+len(operator) <= len(expr) {
+            if expr[i:i+len(operator)] == operator {
+                result = append(result, strings.TrimSpace(current.String()))
+                current.Reset()
+                i += len(operator) - 1 // Пропускаем оператор
+                continue
+            }
+        }
+        
+        current.WriteByte(char)
+    }
+    
+    if current.Len() > 0 {
+        result = append(result, strings.TrimSpace(current.String()))
+    }
+    
+    return result
+}
+
+// parseSingleExpression парсит одно условие вида "KEY OPERATOR VALUE"
+func parseSingleExpression(expr string) (Expression, error) {
+    matchExpr := regexp.MustCompile(`(\w+)\s*([=<>!]+)\s*(["']?[-\d\.]+["']?)`)
+    matches := matchExpr.FindStringSubmatch(expr)
+    
+    if len(matches) != 4 {
+        return Expression{}, fmt.Errorf("invalid expression format: %s", expr)
+    }
+    
+    key := matches[1]
+    operator := matches[2]
+    value := strings.Trim(matches[3], `'"`)
+    
+    // Проверяем валидность оператора
+    validOps := map[string]bool{">": true, "<": true, ">=": true, "<=": true, "==": true, "!=": true}
+    if !validOps[operator] {
+        return Expression{}, fmt.Errorf("invalid operator: %s", operator)
+    }
+    
+    return Expression{
+        Key:      key,
+        Operator: operator,
+        Value:    value,
+    }, nil
+}
+
+
+
+
 
 // EvaluateCondition оценивает одно условие для данной строки VCF
 func EvaluateCondition(line string, expr Expression) bool {
@@ -167,6 +224,9 @@ func EvaluateCondition(line string, expr Expression) bool {
     }
 }
 
+
+
+
 // compareNumbers выполняет сравнение чисел с заданным оператором
 func compareNumbers(a, b float64, operator string) bool {
     switch operator {
@@ -204,7 +264,7 @@ func EvaluateGroup(line string, group ConditionGroup) bool {
         }
         return true
     } else {
-        // Хотя бы одно условие должно быть истинно
+        // Хотя бы одно условие должно быть истинно (OR группа)
         for _, condition := range group.Conditions {
             if EvaluateCondition(line, condition) {
                 return true
@@ -213,7 +273,6 @@ func EvaluateGroup(line string, group ConditionGroup) bool {
         return false
     }
 }
-
 // ParallelFilterRows параллельно фильтрует строки
 func ParallelFilterRows(lines <-chan string, wg *sync.WaitGroup, output chan<- string, groups []ConditionGroup) {
     defer wg.Done()
@@ -221,6 +280,7 @@ func ParallelFilterRows(lines <-chan string, wg *sync.WaitGroup, output chan<- s
     for line := range lines {
         matchesAll := true
         
+        // Все группы должны быть истинны (группы соединены AND)
         for _, group := range groups {
             if !EvaluateGroup(line, group) {
                 matchesAll = false
