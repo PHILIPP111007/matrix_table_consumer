@@ -98,6 +98,10 @@ func (r *VCFRow) GetValue(fieldName string) (interface{}, error) {
                 return true, nil
             }
             // Пробуем парсить как число
+
+            valueParts := strings.Split(value, ",")
+            value = valueParts[0]
+
             if num, err := strconv.ParseFloat(value, 64); err == nil {
                 return num, nil
             }
@@ -144,9 +148,6 @@ func EvaluateRow(row *VCFRow, expression *govaluate.EvaluableExpression) (bool, 
     
     // Добавляем INFO поля
     for key, value := range row.InfoFields {
-        valueParts := strings.Split(row.Info, ",")
-        value = valueParts[0]  // TODO
-
         if num, err := strconv.ParseFloat(value, 64); err == nil {
             parameters[key] = num
         } else if value == "true" {
