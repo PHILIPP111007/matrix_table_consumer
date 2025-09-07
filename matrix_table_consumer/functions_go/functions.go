@@ -22,7 +22,7 @@ func LoggerError(s string) {
 	fmt.Printf("[%s] - ERROR - %s", t, s)
 }
 
-func extractRow(line string) *VCFContainer {
+func extractRow(line string) *VCFRowJSON {
 	fields := strings.Split(strings.TrimSpace(line), "\t")
 
 	chrom := fields[0]
@@ -36,7 +36,7 @@ func extractRow(line string) *VCFContainer {
 	filter := fields[6]
 	info := fields[7]
 
-	return &VCFContainer{
+	return &VCFRowJSON{
 		Chrom:  chrom,
 		Id:     id,
 		Ref:    ref,
@@ -48,7 +48,7 @@ func extractRow(line string) *VCFContainer {
 	}
 }
 
-func ParallelExtractRows(lines <-chan string, wg *sync.WaitGroup, output chan<- *VCFContainer) {
+func ParallelExtractRows(lines <-chan string, wg *sync.WaitGroup, output chan<- *VCFRowJSON) {
 	defer wg.Done()
 	for line := range lines {
 		output <- extractRow(line)

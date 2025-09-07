@@ -19,16 +19,25 @@ func ParseVCFRow(line string) *VCFRow {
 		return nil
 	}
 
+	pos, _ := strconv.Atoi(parts[1])
+	pos32 := int32(pos)
+
+	var qual8 int8 = 0
+	if parts[5] != "." {
+		qual, _ := strconv.Atoi(parts[5])
+		qual8 = int8(qual)
+	}
+
 	row := &VCFRow{
 		Chrom:      parts[0],
-		Pos:        parts[1],
 		ID:         parts[2],
 		Ref:        parts[3],
 		Alt:        parts[4],
-		Qual:       parts[5],
 		Filter:     parts[6],
 		Info:       parts[7],
 		InfoFields: make(map[string]string),
+		Pos:        pos32,
+		Qual:       qual8,
 	}
 
 	if len(parts) > 8 {
@@ -39,8 +48,8 @@ func ParseVCFRow(line string) *VCFRow {
 	}
 
 	// Парсим INFO поле
-	infoParts := strings.Split(row.Info, ";")
-	for _, part := range infoParts {
+	infoParts := strings.SplitSeq(row.Info, ";")
+	for part := range infoParts {
 		if strings.Contains(part, "=") {
 			kv := strings.SplitN(part, "=", 2)
 			if len(kv) == 2 {
@@ -55,33 +64,22 @@ func ParseVCFRow(line string) *VCFRow {
 }
 
 // GetValue возвращает значение поля по имени
-func (r *VCFRow) GetValue(fieldName string) (interface{}, error) {
+func (r *VCFRow) GetValue(fieldName string) (any, error) {
 	switch fieldName {
 	case "QUAL":
-		if r.Qual == "." {
-			return nil, fmt.Errorf("QUAL is missing")
-		}
-		return strconv.ParseFloat(r.Qual, 64)
-
-	case "CHROM", "POS", "ID", "REF", "ALT", "FILTER":
-		// Эти поля доступны напрямую
-		fieldValue := ""
-		switch fieldName {
-		case "CHROM":
-			fieldValue = r.Chrom
-		case "POS":
-			fieldValue = r.Pos
-		case "ID":
-			fieldValue = r.ID
-		case "REF":
-			fieldValue = r.Ref
-		case "ALT":
-			fieldValue = r.Alt
-		case "FILTER":
-			fieldValue = r.Filter
-		}
-		return fieldValue, nil
-
+		return r.Qual, nil
+	case "CHROM":
+		return r.Chrom, nil
+	case "POS":
+		return r.Pos, nil
+	case "ID":
+		return r.ID, nil
+	case "REF":
+		return r.Ref, nil
+	case "ALT":
+		return r.Alt, nil
+	case "FILTER":
+		return r.Filter, nil
 	default:
 		// INFO поля
 		if value, exists := r.InfoFields[fieldName]; exists {
@@ -104,7 +102,7 @@ func (r *VCFRow) GetValue(fieldName string) (interface{}, error) {
 
 // FilterFunctions содержит функции для фильтрации
 var FilterFunctions = map[string]govaluate.ExpressionFunction{
-	"has": func(args ...interface{}) (interface{}, error) {
+	"has": func(args ...any) (any, error) {
 		if len(args) != 2 {
 			return nil, fmt.Errorf("has() expects 2 arguments")
 		}
@@ -124,7 +122,7 @@ var FilterFunctions = map[string]govaluate.ExpressionFunction{
 
 // EvaluateRow оценивает строку VCF по выражению
 func EvaluateRow(row *VCFRow, expression *govaluate.EvaluableExpression) (bool, error) {
-	parameters := make(map[string]interface{})
+	parameters := make(map[string]any)
 
 	// Добавляем все поля VCF как параметры
 	if qual, err := row.GetValue("QUAL"); err == nil {
@@ -167,10 +165,6 @@ func ParallelFilterRows(lines <-chan string, wg *sync.WaitGroup, output chan<- s
 	defer wg.Done()
 
 	for line := range lines {
-		if strings.HasPrefix(line, "#") {
-			continue // Пропускаем заголовки
-		}
-
 		row := ParseVCFRow(line)
 		if row == nil {
 			continue

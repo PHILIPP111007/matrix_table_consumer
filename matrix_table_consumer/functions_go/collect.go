@@ -46,12 +46,12 @@ func Collect(num_rows int, start_row int, vcf_path string, is_gzip bool, num_cpu
 	}
 
 	flag := false
-	rows := make([]*VCFContainer, 0)
+	rows := make([]*VCFRowJSON, 0)
 	rows_count := 1
 	num := 0
 
 	linesChan := make(chan string, 100_000)
-	resultsChan := make(chan *VCFContainer, 200_000)
+	resultsChan := make(chan *VCFRowJSON, 200_000)
 
 	wg := sync.WaitGroup{}
 	wg.Add(num_cpu)
@@ -160,11 +160,11 @@ func CollectAll(vcf_path string, is_gzip bool, num_cpu int) string {
 
 	// Channels for transmitting strings and results
 	linesChan := make(chan string, 100_000)
-	resultsChan := make(chan *VCFContainer, 200_000)
+	resultsChan := make(chan *VCFRowJSON, 200_000)
 
 	rows_count := 0
 	num := 0
-	var rows []*VCFContainer
+	var rows []*VCFRowJSON
 
 	wg := sync.WaitGroup{}
 	wg.Add(num_cpu)
