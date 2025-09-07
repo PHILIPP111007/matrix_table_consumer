@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"fmt"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -52,9 +53,20 @@ func ParseVCFRow(line string) *VCFRow {
 	for part := range infoParts {
 		if strings.Contains(part, "=") {
 			kv := strings.SplitN(part, "=", 2)
-			part := strings.SplitN(kv[1], ",", 2)[0]
+
+			parts := strings.Split(kv[1], ",")
+			var num_parts []float64
+
+			for _, part := range parts {
+				if num, err := strconv.ParseFloat(part, 64); err == nil {
+					num_parts = append(num_parts, num)
+				}
+			}
+			result_num := slices.Max(num_parts)
+			result_num_str := fmt.Sprintf("%f", result_num)
+
 			if len(kv) == 2 {
-				row.InfoFields[kv[0]] = part
+				row.InfoFields[kv[0]] = result_num_str
 			}
 		} else {
 			row.InfoFields[part] = "true"
