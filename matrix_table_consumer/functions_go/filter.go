@@ -62,11 +62,13 @@ func ParseVCFRow(line string) *VCFRow {
 					num_parts = append(num_parts, num)
 				}
 			}
-			result_num := slices.Max(num_parts)
-			result_num_str := fmt.Sprintf("%f", result_num)
+			if len(num_parts) > 0 {
+				result_num := slices.Max(num_parts)
+				result_num_str := fmt.Sprintf("%f", result_num)
 
-			if len(kv) == 2 {
-				row.InfoFields[kv[0]] = result_num_str
+				if len(kv) == 2 {
+					row.InfoFields[kv[0]] = result_num_str
+				}
 			}
 		} else {
 			row.InfoFields[part] = "true"
