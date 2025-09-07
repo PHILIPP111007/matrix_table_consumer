@@ -1,0 +1,44 @@
+##fileformat=VCFv4.2
+##contig=<ID=chr1,length=249250621>
+##contig=<ID=chr2,length=243199373>
+##contig=<ID=chr3,length=198022430>
+##contig=<ID=chr4,length=191154276>
+##contig=<ID=chr5,length=180915260>
+##contig=<ID=chr6,length=171115067>
+##FILTER=<ID=PASS,Description="All filters passed">
+##INFO=<ID=tumor_af,Number=1,Type=String,Description="">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+##fileDate=20151002
+##source=callMomV0.2
+##reference=gi|251831106|ref|NC_012920.1| Homo sapiens mitochondrion, complete genome
+##contig=<ID=chr1,length=16569,assembly=b37>
+##INFO=<ID=VT,Number=.,Type=String,Description="Alternate allele type. S=SNP, M=MNP, I=Indel">
+##INFO=<ID=AC,Number=.,Type=Integer,Description="Alternate allele counts, comma delimited when multiple">
+##FILTER=<ID=fa,Description="Genotypes called from fasta file">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	HG00096	tumor
+chr1	1	.	C	T	1	PASS	.	GT	0	0/1
+chr1	10	.	T	C	100	fa	AF=0.01;VT=M;AC=1	GT	0	./.
+chr1	11	.	T	C	100	fa	AF=0.01;VT=S;AC=3	GT	0	./.
+chr1	12	.	T	T	100	fa	AF=0.01;VT=I;AC=4	GT	0	./.
+chr1	13	.	T	A	100	fa	AF=0.01;VT=S;AC=1	GT	0	./.
+chr1	14	.	T	A	100	fa	AF=0.01;VT=S;AC=1	GT	0	./.
+chr1	15	.	C	T	100	fa	AF=0.01;VT=M,M;AC=3,1	GT	0	./.
+chr1	16	.	T	C	100	fa	AF=0.01;VT=M,M;AC=1,1	GT	0	./.
+chr1	2	.	C	T	2	PASS	.	GT	0	0/1
+chr1	3	.	C	T	3	PASS	.	GT	0	0/1
+chr1	4	.	G	A	100	fa	AF=0.03;VT=S;AC=2	GT	0	./.
+chr1	5	.	T	C	100	fa	AF=0.01;VT=M;AC=1	GT	0	./.
+chr1	6	.	C	T	100	fa	AF=0.01;VT=S;AC=4	GT	0	./.
+chr1	7	.	T	C	100	fa	AF=0.01;VT=S,I;AC=1,1	GT	0	./.
+chr1	8	.	T	C	100	fa	AF=0.01;VT=S;AC=1	GT	0	./.
+chr1	9	.	G	A	100	fa	AF=0.01;VT=S;AC=1	GT	0	./.
+chr2	4	.	C	T	4	PASS	.	GT	./.	0/1
+chr2	5	.	C	T	5	PASS	.	GT	./.	0/1
+chr3	6	.	C	T	6	PASS	.	GT	./.	0/1
+chr4	7	.	C	T	7	PASS	.	GT	./.	0/1
+chr4	8	.	C	T	8	PASS	.	GT	./.	0/1
+chr4	9	.	C	T	9	PASS	.	GT	./.	0/1
+chr5	10	.	C	T	10	PASS	.	GT	./.	0/1
+chr6	11	.	C	T	11	PASS	.	GT	./.	0/1
+chr6	12	.	C	T	12	PASS	.	GT	./.	0/1
+chr6	13	.	C	T	13	PASS	.	GT	0/1	0/1

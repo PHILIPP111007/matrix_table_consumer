@@ -52,8 +52,9 @@ func ParseVCFRow(line string) *VCFRow {
 	for part := range infoParts {
 		if strings.Contains(part, "=") {
 			kv := strings.SplitN(part, "=", 2)
+			part := strings.SplitN(kv[1], ",", 2)[0]
 			if len(kv) == 2 {
-				row.InfoFields[kv[0]] = kv[1]
+				row.InfoFields[kv[0]] = part
 			}
 		} else {
 			row.InfoFields[part] = "true"

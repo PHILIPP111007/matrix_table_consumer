@@ -27,5 +27,5 @@ def test_merge() -> None:
         file2 = output_file.read()
 
         assert file1 == file2
-    
+
     os.remove(output_vcf)
