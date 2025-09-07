@@ -7,19 +7,19 @@ import (
 
 type VCFRow struct {
 	Chrom      string
-	Pos        string
 	ID         string
 	Ref        string
 	Alt        string
-	Qual       string
 	Filter     string
 	Info       string
 	Format     string
 	Samples    []string
 	InfoFields map[string]string
+	Pos        int32
+	Qual       int8
 }
 
-type VCFContainer struct {
+type VCFRowJSON struct {
 	Chrom  string `json:"CHROM"`
 	Id     string `json:"ID"`
 	Ref    string `json:"REF"`
@@ -30,7 +30,7 @@ type VCFContainer struct {
 	Qual   int8   `json:"QUAL"`
 }
 
-type Rows []*VCFContainer
+type Rows []*VCFRowJSON
 
 type VCFRecordWithSamples struct {
 	Chrom   string
