@@ -1,5 +1,7 @@
 # Filter
 
+VCF file downloaded from <https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/>
+
 ```bash
 time bcftools filter \
     -o /home/phil/GitHub/matrix_table_consumer/data/test_1.vcf \
