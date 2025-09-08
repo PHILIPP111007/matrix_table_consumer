@@ -102,7 +102,7 @@ func readVCFHeaders(vcf1, vcf2 string, is_gzip, is_gzip2 bool) ([]string, error)
 	}
 
 	scanner1 := bufio.NewScanner(reader1)
-	const maxTokenSize = 1 << 20
+	const maxTokenSize = 1 << 21
 	buf := make([]byte, maxTokenSize)
 	scanner1.Buffer(buf, maxTokenSize)
 	for scanner1.Scan() {
@@ -207,7 +207,7 @@ func readAndMergeVCFs(vcf1, vcf2, outputVCF string, is_gzip, is_gzip2 bool) erro
 			}
 
 			scanner := bufio.NewScanner(reader)
-			const maxTokenSize = 1 << 20
+			const maxTokenSize = 1 << 21
 			buf := make([]byte, maxTokenSize)
 			scanner.Buffer(buf, maxTokenSize)
 			var sampleNames []string
