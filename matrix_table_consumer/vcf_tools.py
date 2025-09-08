@@ -3,6 +3,8 @@ import sys
 import argparse
 import ctypes
 from datetime import datetime
+import curses
+import gzip
 
 
 current_dir = os.path.dirname(__file__)
@@ -84,6 +86,76 @@ def merge(
     Merge(vcf1_encoded, vcf2_encoded, output_vcf_encoded, file_with_vcfs_encoded)
 
 
+def lazy_read(file_path: str):
+    """Lazy loading of strings from a file."""
+
+    if file_path.endswith(".gz"):
+        with gzip.open(file_path, "r") as f:
+            yield from f
+    else:
+        with open(file_path, "r") as f:
+            yield from f
+
+
+def view(vcf: str):
+    def show_file(stdscr):
+        stdscr.clear()
+        curses.curs_set(0)  # Hiding the cursor
+        screen_height, _ = stdscr.getmaxyx()
+        buffer_size = screen_height * 2  # Buffer zone size for comfortable scrolling
+        line_buffer = []
+        generator = lazy_read(vcf)
+        position = 0
+        max_position = None
+
+        while True:
+            stdscr.clear()
+
+            while len(line_buffer) <= buffer_size and not max_position:
+                try:
+                    next_line = next(generator).strip()
+                    line_buffer.append(next_line)
+                except StopIteration:
+                    max_position = len(line_buffer) - screen_height
+
+            # Checking the boundaries of the position
+            if position < 0:
+                position = 0
+            elif position > max_position:
+                position = max_position or 0
+
+            # Displaying lines on the screen
+            for idx in range(screen_height):
+                if position + idx < len(line_buffer):
+                    stdscr.addstr(idx, 0, line_buffer[position + idx])
+
+            # Waiting for input event
+            key = stdscr.getch()
+            if key == ord("k"):  # Up arrow
+                position -= 1
+            elif key == ord("j"):  # Down arrow
+                position += 1
+            elif key == ord("\n"):  # Move page down
+                position += screen_height
+            elif key == ord("/"):  # Go to the specified line
+                stdscr.clear()
+                curses.echo()  # Turn on echo mode to display input
+                stdscr.addstr(0, 0, "Enter line number: ")
+                input_str = stdscr.getstr().decode("utf-8")
+                try:
+                    new_pos = int(input_str.strip()) - 1
+                    if new_pos >= 0:
+                        position = min(new_pos, len(line_buffer))
+                except ValueError:
+                    pass
+                finally:
+                    curses.noecho()  # Turn off echo mode
+            elif key == ord("q"):
+                break
+
+    curses.wrapper(show_file)
+
+
 def main():
     parser = argparse.ArgumentParser()
 
@@ -92,6 +164,12 @@ def main():
     )
     parser.add_argument(
         "-merge", required=False, action="store_true", help="Merge VCF files."
+    )
+    parser.add_argument(
+        "-view",
+        required=False,
+        action="store_true",
+        help="View VCF file. j -> next line, k -> previous line, ENTER -> next page, / -> enter line number, q -> quit.",
     )
     parser.add_argument(
         "-i",
@@ -144,7 +222,7 @@ def main():
                 )
             else:
                 logger_error("Provide args")
-        if args.merge:
+        elif args.merge:
             vcf1: str = args.vcf
             vcf2: str = args.vcf2
             output_vcf: str = args.output
@@ -157,6 +235,13 @@ def main():
                     output_vcf=output_vcf,
                     file_with_vcfs=file_with_vcfs,
                 )
+            else:
+                logger_error("Provide args")
+        elif args.view:
+            vcf: str = args.vcf
+
+            if vcf:
+                view(vcf=vcf)
             else:
                 logger_error("Provide args")
     else:

@@ -73,6 +73,12 @@ Where vcfs.txt is:
 ./data/merge/test2.vcf
 ```
 
+Now you can view vcf files from terminal (j -> next line, k -> previous line, ENTER -> next page, / -> enter line number, q -> quit.):
+
+```bash
+vcf_tools -view -vcf ./data/merge/test_merged.vcf
+```
+
 To run tests, use:
 
 ```bash
