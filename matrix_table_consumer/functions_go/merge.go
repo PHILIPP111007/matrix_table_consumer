@@ -70,77 +70,115 @@ func parseVCFLine(line string, sampleNames []string) *VCFRecordWithSamples {
 }
 
 // readVCFHeaders reads headers from two VCF files
-func readVCFHeaders(vcf1, vcf2 string) ([]string, error) {
+func readVCFHeaders(vcf1, vcf2 string, vcf_files []string) ([]string, error) {
 	headers := make([]string, 0)
 	samplesNames := make([]string, 0)
 	var endHeaderWithoutSamples []string
 
-	// Reading the first file
-	file1, err := os.Open(vcf1)
-	if err != nil {
-		return nil, err
-	}
-	defer file1.Close()
-
-	var reader1 *bufio.Reader
-	if strings.HasSuffix(vcf1, ".gz") {
-		gr, err := gzip.NewReader(file1)
-		if err != nil {
-			s := fmt.Sprintf("Error creating gzip reader: %v\n", err)
-			LoggerError(s)
-		}
-		defer gr.Close()
-		reader1 = bufio.NewReader(gr)
-	} else {
-		reader1 = bufio.NewReader(file1)
-	}
-
-	scanner1 := GetScaner(reader1)
-	for scanner1.Scan() {
-		line := scanner1.Text()
-		if strings.HasPrefix(line, "##") {
-			if !contains(headers, line) {
-				headers = append(headers, line)
+	if len(vcf_files) > 0 {
+		for _, vcf_path := range vcf_files {
+			file, err := os.Open(vcf_path)
+			if err != nil {
+				return nil, err
 			}
-		} else if strings.HasPrefix(line, "#CHROM") {
-			headerEnd := strings.Split(strings.TrimSpace(line), "\t")
-			endHeaderWithoutSamples = headerEnd[:9]
-			samplesNames = append(samplesNames, headerEnd[9:]...)
-			break
-		}
-	}
+			defer file.Close()
 
-	// Reading the second file
-	file2, err := os.Open(vcf2)
-	if err != nil {
-		return nil, err
-	}
-	defer file2.Close()
-
-	var reader2 *bufio.Reader
-	if strings.HasSuffix(vcf2, ".gz") {
-		gr, err := gzip.NewReader(file2)
-		if err != nil {
-			s := fmt.Sprintf("Error creating gzip reader: %v\n", err)
-			LoggerError(s)
-		}
-		defer gr.Close()
-		reader2 = bufio.NewReader(gr)
-	} else {
-		reader2 = bufio.NewReader(file2)
-	}
-
-	scanner2 := GetScaner(reader2)
-	for scanner2.Scan() {
-		line := scanner2.Text()
-		if strings.HasPrefix(line, "##") {
-			if !contains(headers, line) {
-				headers = append(headers, line)
+			var reader *bufio.Reader
+			if strings.HasSuffix(vcf1, ".gz") {
+				gr, err := gzip.NewReader(file)
+				if err != nil {
+					s := fmt.Sprintf("Error creating gzip reader: %v\n", err)
+					LoggerError(s)
+				}
+				defer gr.Close()
+				reader = bufio.NewReader(gr)
+			} else {
+				reader = bufio.NewReader(file)
 			}
-		} else if strings.HasPrefix(line, "#CHROM") {
-			headerEnd := strings.Split(strings.TrimSpace(line), "\t")
-			samplesNames = append(samplesNames, headerEnd[9:]...)
-			break
+
+			scanner := GetScaner(reader)
+			for scanner.Scan() {
+				line := scanner.Text()
+				if strings.HasPrefix(line, "##") {
+					if !contains(headers, line) {
+						headers = append(headers, line)
+					}
+				} else if strings.HasPrefix(line, "#CHROM") {
+					headerEnd := strings.Split(strings.TrimSpace(line), "\t")
+					endHeaderWithoutSamples = headerEnd[:9]
+					samplesNames = append(samplesNames, headerEnd[9:]...)
+					break
+				}
+			}
+		}
+	} else {
+		// Reading the first file
+		file1, err := os.Open(vcf1)
+		if err != nil {
+			return nil, err
+		}
+		defer file1.Close()
+
+		var reader1 *bufio.Reader
+		if strings.HasSuffix(vcf1, ".gz") {
+			gr, err := gzip.NewReader(file1)
+			if err != nil {
+				s := fmt.Sprintf("Error creating gzip reader: %v\n", err)
+				LoggerError(s)
+			}
+			defer gr.Close()
+			reader1 = bufio.NewReader(gr)
+		} else {
+			reader1 = bufio.NewReader(file1)
+		}
+
+		scanner1 := GetScaner(reader1)
+		for scanner1.Scan() {
+			line := scanner1.Text()
+			if strings.HasPrefix(line, "##") {
+				if !contains(headers, line) {
+					headers = append(headers, line)
+				}
+			} else if strings.HasPrefix(line, "#CHROM") {
+				headerEnd := strings.Split(strings.TrimSpace(line), "\t")
+				endHeaderWithoutSamples = headerEnd[:9]
+				samplesNames = append(samplesNames, headerEnd[9:]...)
+				break
+			}
+		}
+
+		// Reading the second file
+		file2, err := os.Open(vcf2)
+		if err != nil {
+			return nil, err
+		}
+		defer file2.Close()
+
+		var reader2 *bufio.Reader
+		if strings.HasSuffix(vcf2, ".gz") {
+			gr, err := gzip.NewReader(file2)
+			if err != nil {
+				s := fmt.Sprintf("Error creating gzip reader: %v\n", err)
+				LoggerError(s)
+			}
+			defer gr.Close()
+			reader2 = bufio.NewReader(gr)
+		} else {
+			reader2 = bufio.NewReader(file2)
+		}
+
+		scanner2 := GetScaner(reader2)
+		for scanner2.Scan() {
+			line := scanner2.Text()
+			if strings.HasPrefix(line, "##") {
+				if !contains(headers, line) {
+					headers = append(headers, line)
+				}
+			} else if strings.HasPrefix(line, "#CHROM") {
+				headerEnd := strings.Split(strings.TrimSpace(line), "\t")
+				samplesNames = append(samplesNames, headerEnd[9:]...)
+				break
+			}
 		}
 	}
 
@@ -407,21 +445,6 @@ func writeMergedRecord(record *VCFRecordWithSamples, samplesOrdered []string, ou
 
 // Merge combines two VCF files
 func Merge(vcf1, vcf2, outputVCF, file_with_vcfs string) {
-	headers, err := readVCFHeaders(vcf1, vcf2)
-	if err != nil {
-		s := fmt.Sprintf("Error: %v\n", err)
-		LoggerError(s)
-	}
-
-	LoggerInfo("Writing headers...\n")
-
-	if err := writeHeaders(headers, outputVCF); err != nil {
-		s := fmt.Sprintf("Error: %v\n", err)
-		LoggerError(s)
-	}
-
-	LoggerInfo("Reading VCFs...\n")
-
 	var vcf_files []string
 	if file_with_vcfs != "." {
 		f, err := os.Open(file_with_vcfs)
@@ -446,6 +469,21 @@ func Merge(vcf1, vcf2, outputVCF, file_with_vcfs string) {
 			}
 		}
 	}
+
+	headers, err := readVCFHeaders(vcf1, vcf2, vcf_files)
+	if err != nil {
+		s := fmt.Sprintf("Error: %v\n", err)
+		LoggerError(s)
+	}
+
+	LoggerInfo("Writing headers...\n")
+
+	if err := writeHeaders(headers, outputVCF); err != nil {
+		s := fmt.Sprintf("Error: %v\n", err)
+		LoggerError(s)
+	}
+
+	LoggerInfo("Reading VCFs...\n")
 
 	records, samplesList, err := readVCFs(vcf1, vcf2, vcf_files)
 	if err != nil {
