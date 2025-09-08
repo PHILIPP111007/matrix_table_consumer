@@ -42,49 +42,46 @@ def logger_error(s: str) -> None:
     print(f"[{t}] - ERROR - {s}")
 
 
-class VCFTools:
-    def filter(
-        self, include: str, input_vcf: str, output_vcf: str, num_cpu: int
-    ) -> None:
-        if not os.path.exists(input_vcf):
-            logger_error("Input vcf not found")
-            sys.exit(1)
+def filter(include: str, input_vcf: str, output_vcf: str, num_cpu: int) -> None:
+    if not os.path.exists(input_vcf):
+        logger_error("Input vcf not found")
+        sys.exit(1)
 
-        if os.path.exists(output_vcf):
-            logger_error("File output vcf already exists")
-            sys.exit(1)
+    if os.path.exists(output_vcf):
+        logger_error("File output vcf already exists")
+        sys.exit(1)
 
-        include_encoded = include.encode("utf-8")
-        input_vcf_encoded = input_vcf.encode("utf-8")
-        output_vcf_encoded = output_vcf.encode("utf-8")
+    include_encoded = include.encode("utf-8")
+    input_vcf_encoded = input_vcf.encode("utf-8")
+    output_vcf_encoded = output_vcf.encode("utf-8")
 
-        Filter(include_encoded, input_vcf_encoded, output_vcf_encoded, num_cpu)
+    Filter(include_encoded, input_vcf_encoded, output_vcf_encoded, num_cpu)
 
-    def merge(
-        self,
-        vcf1: str = "",
-        vcf2: str = "",
-        output_vcf: str = "",
-        file_with_vcfs: str = ".",
-    ) -> None:
-        if vcf1 and not os.path.exists(vcf1):
-            logger_error("Input vcf not found")
-            sys.exit(1)
 
-        if vcf2 and not os.path.exists(vcf2):
-            logger_error("Input vcf not found")
-            sys.exit(1)
+def merge(
+    vcf1: str = "",
+    vcf2: str = "",
+    output_vcf: str = "",
+    file_with_vcfs: str = ".",
+) -> None:
+    if vcf1 and not os.path.exists(vcf1):
+        logger_error("Input vcf not found")
+        sys.exit(1)
 
-        if file_with_vcfs != "." and not os.path.exists(file_with_vcfs):
-            logger_error("Input vcf not found")
-            sys.exit(1)
+    if vcf2 and not os.path.exists(vcf2):
+        logger_error("Input vcf not found")
+        sys.exit(1)
 
-        vcf1_encoded = vcf1.encode("utf-8")
-        vcf2_encoded = vcf2.encode("utf-8")
-        output_vcf_encoded = output_vcf.encode("utf-8")
-        file_with_vcfs_encoded = file_with_vcfs.encode("utf-8")
+    if file_with_vcfs != "." and not os.path.exists(file_with_vcfs):
+        logger_error("Input vcf not found")
+        sys.exit(1)
 
-        Merge(vcf1_encoded, vcf2_encoded, output_vcf_encoded, file_with_vcfs_encoded)
+    vcf1_encoded = vcf1.encode("utf-8")
+    vcf2_encoded = vcf2.encode("utf-8")
+    output_vcf_encoded = output_vcf.encode("utf-8")
+    file_with_vcfs_encoded = file_with_vcfs.encode("utf-8")
+
+    Merge(vcf1_encoded, vcf2_encoded, output_vcf_encoded, file_with_vcfs_encoded)
 
 
 def main():
@@ -101,7 +98,7 @@ def main():
         "--include",
         required=False,
         type=str,
-        help="Expression. Example: 'QUAL >= 30'",
+        help="Expression. Example: QUAL>=30 or FILTER=='PASS' (string values must be under quotes).",
     )
     parser.add_argument(
         "-vcf", "--vcf", required=False, type=str, help="Input VCF file."
@@ -132,15 +129,14 @@ def main():
     args = parser.parse_args()
 
     if len(sys.argv) > 1:
-        if sys.argv[1] == "-filter":
+        if args.filter:
             include: str = args.include
             input_vcf: str = args.vcf
             output_vcf: str = args.output
             num_cpu: bool = args.num_cpu
 
             if include and input_vcf and output_vcf:
-                vcftools = VCFTools()
-                vcftools.filter(
+                filter(
                     include=include,
                     input_vcf=input_vcf,
                     output_vcf=output_vcf,
@@ -148,15 +144,14 @@ def main():
                 )
             else:
                 logger_error("Provide args")
-        elif sys.argv[1] == "-merge":
+        if args.merge:
             vcf1: str = args.vcf
             vcf2: str = args.vcf2
             output_vcf: str = args.output
             file_with_vcfs: str = args.file_with_vcfs
 
             if (vcf1 and vcf2 or file_with_vcfs != ".") and output_vcf:
-                vcftools = VCFTools()
-                vcftools.merge(
+                merge(
                     vcf1=vcf1,
                     vcf2=vcf2,
                     output_vcf=output_vcf,
@@ -164,6 +159,8 @@ def main():
                 )
             else:
                 logger_error("Provide args")
+    else:
+        logger_error("Provide args")
 
 
 if __name__ == "__main__":
