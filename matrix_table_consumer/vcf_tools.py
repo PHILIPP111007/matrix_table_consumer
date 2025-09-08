@@ -81,7 +81,7 @@ class VCFTools:
         Merge(vcf1__encoded, vcf2__encoded, output_vcf_encoded)
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
@@ -148,3 +148,7 @@ if __name__ == "__main__":
                 )
             else:
                 logger_error("Provide args")
+
+
+if __name__ == "__main__":
+    main()

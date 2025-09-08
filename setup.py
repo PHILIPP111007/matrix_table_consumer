@@ -63,6 +63,11 @@ setup(
         ("", ["matrix_table_consumer/main.so"]),
         ("", ["matrix_table_consumer/main.h"]),
     ],
+    entry_points={
+        "console_scripts": [
+            "vcf_tools=matrix_table_consumer.vcf_tools:main",
+        ],
+    },
     include_package_data=True,
     zip_safe=False,
     license="MIT",
