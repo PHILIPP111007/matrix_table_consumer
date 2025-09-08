@@ -62,23 +62,29 @@ class VCFTools:
 
     def merge(
         self,
-        vcf1: str,
-        vcf2: str,
-        output_vcf: str,
+        vcf1: str = "",
+        vcf2: str = "",
+        output_vcf: str = "",
+        file_with_vcfs: str = ".",
     ) -> None:
-        if not os.path.exists(vcf1):
+        if vcf1 and not os.path.exists(vcf1):
             logger_error("Input vcf not found")
             sys.exit(1)
 
-        if not os.path.exists(vcf2):
+        if vcf2 and not os.path.exists(vcf2):
             logger_error("Input vcf not found")
             sys.exit(1)
 
-        vcf1__encoded = vcf1.encode("utf-8")
-        vcf2__encoded = vcf2.encode("utf-8")
+        if file_with_vcfs != "." and not os.path.exists(file_with_vcfs):
+            logger_error("Input vcf not found")
+            sys.exit(1)
+
+        vcf1_encoded = vcf1.encode("utf-8")
+        vcf2_encoded = vcf2.encode("utf-8")
         output_vcf_encoded = output_vcf.encode("utf-8")
+        file_with_vcfs_encoded = file_with_vcfs.encode("utf-8")
 
-        Merge(vcf1__encoded, vcf2__encoded, output_vcf_encoded)
+        Merge(vcf1_encoded, vcf2_encoded, output_vcf_encoded, file_with_vcfs_encoded)
 
 
 def main():
@@ -102,6 +108,14 @@ def main():
     )
     parser.add_argument(
         "-vcf2", "--vcf2", required=False, type=str, help="Input VCF file."
+    )
+    parser.add_argument(
+        "-file_with_vcfs",
+        "--file_with_vcfs",
+        required=False,
+        type=str,
+        default=".",
+        help="File contains vcf paths which are located on separate lines in the file.",
     )
     parser.add_argument(
         "-o", "--output", required=False, type=str, help="Output VCF file."
@@ -138,13 +152,15 @@ def main():
             vcf1: str = args.vcf
             vcf2: str = args.vcf2
             output_vcf: str = args.output
+            file_with_vcfs: str = args.file_with_vcfs
 
-            if vcf1 and vcf2 and output_vcf:
+            if (vcf1 and vcf2 or file_with_vcfs != ".") and output_vcf:
                 vcftools = VCFTools()
                 vcftools.merge(
                     vcf1=vcf1,
                     vcf2=vcf2,
                     output_vcf=output_vcf,
+                    file_with_vcfs=file_with_vcfs,
                 )
             else:
                 logger_error("Provide args")

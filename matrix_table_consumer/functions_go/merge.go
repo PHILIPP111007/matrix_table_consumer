@@ -156,7 +156,7 @@ func readVCFHeaders(vcf1, vcf2 string) ([]string, error) {
 }
 
 // readAndMergeVCFs reads and merges two VCF files with streaming processing for large files
-func readVCFs(vcf1, vcf2 string) ([]*VCFRecordWithSamples, []string, error) {
+func readVCFs(vcf1, vcf2 string, vcf_files []string) ([]*VCFRecordWithSamples, []string, error) {
 	allSamples := make(map[string]bool)
 
 	recordChan := make(chan *VCFRecordWithSamples, 5_000)
@@ -220,14 +220,23 @@ func readVCFs(vcf1, vcf2 string) ([]*VCFRecordWithSamples, []string, error) {
 			return scanner.Err()
 		}
 
-		if err := processFile(vcf1); err != nil {
-			errorChan <- err
-			return
-		}
+		if len(vcf_files) > 0 {
+			for _, file_path := range vcf_files {
+				if err := processFile(file_path); err != nil {
+					errorChan <- err
+					return
+				}
+			}
+		} else {
+			if err := processFile(vcf1); err != nil {
+				errorChan <- err
+				return
+			}
 
-		if err := processFile(vcf2); err != nil {
-			errorChan <- err
-			return
+			if err := processFile(vcf2); err != nil {
+				errorChan <- err
+				return
+			}
 		}
 
 		doneChan <- true
@@ -397,7 +406,7 @@ func writeMergedRecord(record *VCFRecordWithSamples, samplesOrdered []string, ou
 }
 
 // Merge combines two VCF files
-func Merge(vcf1, vcf2, outputVCF string) {
+func Merge(vcf1, vcf2, outputVCF, file_with_vcfs string) {
 	headers, err := readVCFHeaders(vcf1, vcf2)
 	if err != nil {
 		s := fmt.Sprintf("Error: %v\n", err)
@@ -413,7 +422,32 @@ func Merge(vcf1, vcf2, outputVCF string) {
 
 	LoggerInfo("Reading VCFs...\n")
 
-	records, samplesList, err := readVCFs(vcf1, vcf2)
+	var vcf_files []string
+	if file_with_vcfs != "." {
+		f, err := os.Open(file_with_vcfs)
+		if err != nil {
+			s := fmt.Sprintf("Failed to open the file: %v\n", err)
+			LoggerError(s)
+			return
+		}
+		defer f.Close()
+
+		reader := bufio.NewReader(f)
+		scanner := GetScaner(reader)
+		for scanner.Scan() {
+			vcf_path := scanner.Text()
+
+			_, err := os.Stat(vcf_path)
+			if os.IsNotExist(err) {
+				s := fmt.Sprintf("The file '%s' does not exist.\n", vcf_path)
+				LoggerError(s)
+			} else {
+				vcf_files = append(vcf_files, vcf_path)
+			}
+		}
+	}
+
+	records, samplesList, err := readVCFs(vcf1, vcf2, vcf_files)
 	if err != nil {
 		s := fmt.Sprintf("Error: %v\n", err)
 		LoggerError(s)

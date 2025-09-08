@@ -42,12 +42,13 @@ func Filter(include_pointer *C.char, input_vcf_path_pointer *C.char, output_vcf_
 }
 
 //export Merge
-func Merge(vcf1_pointer *C.char, vcf2_pointer *C.char, output_vcf_pointer *C.char) {
+func Merge(vcf1_pointer *C.char, vcf2_pointer *C.char, output_vcf_pointer *C.char, file_with_vcfs_pointer *C.char) {
 	vcf1 := C.GoString(vcf1_pointer)
 	vcf2 := C.GoString(vcf2_pointer)
 	output_vcf := C.GoString(output_vcf_pointer)
+	file_with_vcfs := C.GoString(file_with_vcfs_pointer)
 
-	functions_go.Merge(vcf1, vcf2, output_vcf)
+	functions_go.Merge(vcf1, vcf2, output_vcf, file_with_vcfs)
 }
 
 func main() {}

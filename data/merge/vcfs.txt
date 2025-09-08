@@ -1,0 +1,2 @@
+../matrix_table_consumer/data/merge/test1.vcf
+../matrix_table_consumer/data/merge/test2.vcf
