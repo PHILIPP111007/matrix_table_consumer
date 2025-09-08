@@ -3,7 +3,6 @@ import sys
 import argparse
 import ctypes
 from datetime import datetime
-from collections import defaultdict
 
 
 current_dir = os.path.dirname(__file__)
@@ -17,7 +16,6 @@ Filter.argtypes = [
     ctypes.c_char_p,
     ctypes.c_char_p,
     ctypes.c_char_p,
-    ctypes.c_bool,
     ctypes.c_int,
 ]
 Filter.restype = None
@@ -26,8 +24,6 @@ Merge.argtypes = [
     ctypes.c_char_p,
     ctypes.c_char_p,
     ctypes.c_char_p,
-    ctypes.c_bool,
-    ctypes.c_bool,
 ]
 Merge.restype = None
 
@@ -48,7 +44,7 @@ def logger_error(s: str) -> None:
 
 class VCFTools:
     def filter(
-        self, include: str, input_vcf: str, output_vcf: str, is_gzip: bool, num_cpu: int
+        self, include: str, input_vcf: str, output_vcf: str, num_cpu: int
     ) -> None:
         if not os.path.exists(input_vcf):
             logger_error("Input vcf not found")
@@ -62,15 +58,13 @@ class VCFTools:
         input_vcf_encoded = input_vcf.encode("utf-8")
         output_vcf_encoded = output_vcf.encode("utf-8")
 
-        Filter(include_encoded, input_vcf_encoded, output_vcf_encoded, is_gzip, num_cpu)
+        Filter(include_encoded, input_vcf_encoded, output_vcf_encoded, num_cpu)
 
     def merge(
         self,
         vcf1: str,
         vcf2: str,
         output_vcf: str,
-        is_gzip: bool,
-        is_gzip2: bool,
     ) -> None:
         if not os.path.exists(vcf1):
             logger_error("Input vcf not found")
@@ -84,7 +78,7 @@ class VCFTools:
         vcf2__encoded = vcf2.encode("utf-8")
         output_vcf_encoded = output_vcf.encode("utf-8")
 
-        Merge(vcf1__encoded, vcf2__encoded, output_vcf_encoded, is_gzip, is_gzip2)
+        Merge(vcf1__encoded, vcf2__encoded, output_vcf_encoded)
 
 
 if __name__ == "__main__":
@@ -112,8 +106,6 @@ if __name__ == "__main__":
     parser.add_argument(
         "-o", "--output", required=False, type=str, help="Output VCF file."
     )
-    parser.add_argument("-gzip", required=False, action="store_true", help="Is gzip.")
-    parser.add_argument("-gzip2", required=False, action="store_true", help="Is gzip.")
     parser.add_argument(
         "-num_cpu",
         "--num_cpu",
@@ -130,7 +122,6 @@ if __name__ == "__main__":
             include: str = args.include
             input_vcf: str = args.vcf
             output_vcf: str = args.output
-            is_gzip: bool = args.gzip
             num_cpu: bool = args.num_cpu
 
             if include and input_vcf and output_vcf:
@@ -139,7 +130,6 @@ if __name__ == "__main__":
                     include=include,
                     input_vcf=input_vcf,
                     output_vcf=output_vcf,
-                    is_gzip=is_gzip,
                     num_cpu=num_cpu,
                 )
             else:
@@ -148,8 +138,6 @@ if __name__ == "__main__":
             vcf1: str = args.vcf
             vcf2: str = args.vcf2
             output_vcf: str = args.output
-            is_gzip: bool = args.gzip
-            is_gzip2: bool = args.gzip2
 
             if vcf1 and vcf2 and output_vcf:
                 vcftools = VCFTools()
@@ -157,8 +145,6 @@ if __name__ == "__main__":
                     vcf1=vcf1,
                     vcf2=vcf2,
                     output_vcf=output_vcf,
-                    is_gzip=is_gzip,
-                    is_gzip2=is_gzip2,
                 )
             else:
                 logger_error("Provide args")

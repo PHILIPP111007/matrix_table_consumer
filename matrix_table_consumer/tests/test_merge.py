@@ -15,8 +15,6 @@ def test_merge() -> None:
         vcf1=vcf1,
         vcf2=vcf2,
         output_vcf=output_vcf,
-        is_gzip=False,
-        is_gzip2=False,
     )
 
     with (

@@ -198,7 +198,7 @@ func ParallelFilterRows(lines <-chan string, wg *sync.WaitGroup, output chan<- s
 	}
 }
 
-func Filter(include string, input_vcf_path string, output_vcf_path string, is_gzip bool, num_cpu int) {
+func Filter(include string, input_vcf_path string, output_vcf_path string, num_cpu int) {
 	if num_cpu <= 0 {
 		num_cpu = 1
 	}
@@ -212,7 +212,7 @@ func Filter(include string, input_vcf_path string, output_vcf_path string, is_gz
 	}
 
 	var reader *bufio.Reader
-	if is_gzip {
+	if strings.HasSuffix(input_vcf_path, ".gz") {
 		f, err := os.Open(input_vcf_path)
 		if err != nil {
 			s := fmt.Sprintf("Failed to open the file: %v\n", err)

@@ -11,14 +11,14 @@ import (
 	"sync"
 )
 
-func Collect(num_rows int, start_row int, vcf_path string, is_gzip bool, num_cpu int) string {
+func Collect(num_rows int, start_row int, vcf_path string, num_cpu int) string {
 	if num_cpu <= 0 {
 		num_cpu = 1
 	}
 
 	var reader *bufio.Reader
 
-	if is_gzip {
+	if strings.HasSuffix(vcf_path, ".gz") {
 		f, err := os.Open(vcf_path)
 		if err != nil {
 			s := fmt.Sprintf("Failed to open the file: %v\n", err)
@@ -119,14 +119,14 @@ func Collect(num_rows int, start_row int, vcf_path string, is_gzip bool, num_cpu
 	return string(jsonBytes)
 }
 
-func CollectAll(vcf_path string, is_gzip bool, num_cpu int) string {
+func CollectAll(vcf_path string, num_cpu int) string {
 	if num_cpu <= 0 {
 		num_cpu = 1
 	}
 
 	var reader *bufio.Reader
 
-	if is_gzip {
+	if strings.HasSuffix(vcf_path, ".gz") {
 		f, err := os.Open(vcf_path)
 		if err != nil {
 			s := fmt.Sprintf("Failed to open the file: %v\n", err)
@@ -223,10 +223,10 @@ func CollectAll(vcf_path string, is_gzip bool, num_cpu int) string {
 	return string(jsonBytes)
 }
 
-func Count(vcf_path string, is_gzip bool) int {
+func Count(vcf_path string) int {
 	var reader *bufio.Reader
 
-	if is_gzip {
+	if strings.HasSuffix(vcf_path, ".gz") {
 		f, err := os.Open(vcf_path)
 		if err != nil {
 			s := fmt.Sprintf("Failed to open the file: %v\n", err)

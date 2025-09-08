@@ -70,7 +70,7 @@ func parseVCFLine(line string, sampleNames []string) *VCFRecordWithSamples {
 }
 
 // readVCFHeaders reads headers from two VCF files
-func readVCFHeaders(vcf1, vcf2 string, is_gzip, is_gzip2 bool) ([]string, error) {
+func readVCFHeaders(vcf1, vcf2 string) ([]string, error) {
 	headers := make([]string, 0)
 	samplesNames := make([]string, 0)
 	var endHeaderWithoutSamples []string
@@ -83,7 +83,7 @@ func readVCFHeaders(vcf1, vcf2 string, is_gzip, is_gzip2 bool) ([]string, error)
 	defer file1.Close()
 
 	var reader1 *bufio.Reader
-	if is_gzip {
+	if strings.HasSuffix(vcf1, ".gz") {
 		gr, err := gzip.NewReader(file1)
 		if err != nil {
 			s := fmt.Sprintf("Error creating gzip reader: %v\n", err)
@@ -118,7 +118,7 @@ func readVCFHeaders(vcf1, vcf2 string, is_gzip, is_gzip2 bool) ([]string, error)
 	defer file2.Close()
 
 	var reader2 *bufio.Reader
-	if is_gzip2 {
+	if strings.HasSuffix(vcf2, ".gz") {
 		gr, err := gzip.NewReader(file2)
 		if err != nil {
 			s := fmt.Sprintf("Error creating gzip reader: %v\n", err)
@@ -156,7 +156,7 @@ func readVCFHeaders(vcf1, vcf2 string, is_gzip, is_gzip2 bool) ([]string, error)
 }
 
 // readAndMergeVCFs reads and merges two VCF files with streaming processing for large files
-func readVCFs(vcf1, vcf2 string, is_gzip, is_gzip2 bool) ([]*VCFRecordWithSamples, []string, error) {
+func readVCFs(vcf1, vcf2 string) ([]*VCFRecordWithSamples, []string, error) {
 	allSamples := make(map[string]bool)
 
 	recordChan := make(chan *VCFRecordWithSamples, 5_000)
@@ -170,15 +170,15 @@ func readVCFs(vcf1, vcf2 string, is_gzip, is_gzip2 bool) ([]*VCFRecordWithSample
 		defer wg.Done()
 		defer close(recordChan)
 
-		processFile := func(filename string, isGzip bool) error {
-			file, err := os.Open(filename)
+		processFile := func(file_path string) error {
+			file, err := os.Open(file_path)
 			if err != nil {
 				return err
 			}
 			defer file.Close()
 
 			var reader io.Reader = file
-			if isGzip {
+			if strings.HasSuffix(file_path, ".gz") {
 				gr, err := gzip.NewReader(file)
 				if err != nil {
 					return fmt.Errorf("gzip error: %v", err)
@@ -220,12 +220,12 @@ func readVCFs(vcf1, vcf2 string, is_gzip, is_gzip2 bool) ([]*VCFRecordWithSample
 			return scanner.Err()
 		}
 
-		if err := processFile(vcf1, is_gzip); err != nil {
+		if err := processFile(vcf1); err != nil {
 			errorChan <- err
 			return
 		}
 
-		if err := processFile(vcf2, is_gzip2); err != nil {
+		if err := processFile(vcf2); err != nil {
 			errorChan <- err
 			return
 		}
@@ -397,8 +397,8 @@ func writeMergedRecord(record *VCFRecordWithSamples, samplesOrdered []string, ou
 }
 
 // Merge combines two VCF files
-func Merge(vcf1, vcf2, outputVCF string, is_gzip, is_gzip2 bool) {
-	headers, err := readVCFHeaders(vcf1, vcf2, is_gzip, is_gzip2)
+func Merge(vcf1, vcf2, outputVCF string) {
+	headers, err := readVCFHeaders(vcf1, vcf2)
 	if err != nil {
 		s := fmt.Sprintf("Error: %v\n", err)
 		LoggerError(s)
@@ -413,7 +413,7 @@ func Merge(vcf1, vcf2, outputVCF string, is_gzip, is_gzip2 bool) {
 
 	LoggerInfo("Reading VCFs...\n")
 
-	records, samplesList, err := readVCFs(vcf1, vcf2, is_gzip, is_gzip2)
+	records, samplesList, err := readVCFs(vcf1, vcf2)
 	if err != nil {
 		s := fmt.Sprintf("Error: %v\n", err)
 		LoggerError(s)

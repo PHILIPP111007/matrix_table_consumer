@@ -34,19 +34,18 @@ CollectAll = lib.CollectAll
 Collect = lib.Collect
 Count = lib.Count
 
-CollectAll.argtypes = [ctypes.c_char_p, ctypes.c_bool, ctypes.c_int]
+CollectAll.argtypes = [ctypes.c_char_p, ctypes.c_int]
 CollectAll.restype = ctypes.c_char_p
 
 Collect.argtypes = [
     ctypes.c_int,
     ctypes.c_int,
     ctypes.c_char_p,
-    ctypes.c_bool,
     ctypes.c_int,
 ]
 Collect.restype = ctypes.c_char_p
 
-Count.argtypes = [ctypes.c_char_p, ctypes.c_bool]
+Count.argtypes = [ctypes.c_char_p]
 Count.restype = ctypes.c_int
 
 
@@ -106,15 +105,12 @@ def load_dill(path: str) -> Content:
 
 
 class MatrixTableConsumer:
-    def __init__(
-        self, vcf_path: str, is_gzip: bool = False, reference_genome: str = "GRCh38"
-    ) -> None:
+    def __init__(self, vcf_path: str, reference_genome: str = "GRCh38") -> None:
         self.visited_objects = set()
         self.visited_objects_values = {}
         self.visited_objects_values_for_restoring = []
         self.start_row = 1
         self.vcf_path = vcf_path
-        self.is_gzip = is_gzip
         self.reference_genome = reference_genome
 
     def _extract_fields(self, obj) -> Content:
@@ -224,7 +220,7 @@ class MatrixTableConsumer:
             sys.exit(1)
 
         vcf_path_encoded = self.vcf_path.encode("utf-8")
-        s = Collect(num_rows, self.start_row, vcf_path_encoded, self.is_gzip, num_cpu)
+        s = Collect(num_rows, self.start_row, vcf_path_encoded, num_cpu)
         s = s.decode("utf-8")
         rows = json.loads(s)
         self.start_row += len(rows)
@@ -238,7 +234,7 @@ class MatrixTableConsumer:
         logger_info("Collecting data")
 
         vcf_path_encoded = self.vcf_path.encode("utf-8")
-        s = CollectAll(vcf_path_encoded, self.is_gzip, num_cpu)
+        s = CollectAll(vcf_path_encoded, num_cpu)
         s = s.decode("utf-8")
         rows = json.loads(s)
 
@@ -247,7 +243,7 @@ class MatrixTableConsumer:
 
     def count(self) -> int:
         vcf_path_encoded = self.vcf_path.encode("utf-8")
-        c = Count(vcf_path_encoded, self.is_gzip)
+        c = Count(vcf_path_encoded)
         return c
 
     def convert_rows_to_hail(self, rows: Rows) -> list[hl.Struct]:

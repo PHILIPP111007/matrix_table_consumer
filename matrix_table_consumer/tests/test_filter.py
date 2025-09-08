@@ -16,7 +16,6 @@ def test_filter() -> None:
         include="FILTER=='PASS'",
         input_vcf=vcf,
         output_vcf=output_vcf,
-        is_gzip=False,
         num_cpu=1,
     )
 
@@ -34,7 +33,6 @@ def test_filter() -> None:
         include="AF>=0.03",
         input_vcf=vcf,
         output_vcf=output_vcf,
-        is_gzip=False,
         num_cpu=1,
     )
 
@@ -52,7 +50,6 @@ def test_filter() -> None:
         include="(AF>=0.03 || AC>=2)",
         input_vcf=vcf,
         output_vcf=output_vcf,
-        is_gzip=False,
         num_cpu=1,
     )
 
