@@ -136,7 +136,7 @@ test_text = [
 
 
 def test_collect_all() -> None:
-    vcf_path = "../matrix_table_consumer/data/test1.vcf"
+    vcf_path = "../matrix_table_consumer/data/collect/test1.vcf"
 
     consumer = MatrixTableConsumer(
         vcf_path=vcf_path, is_gzip=False, reference_genome="GRCh37"

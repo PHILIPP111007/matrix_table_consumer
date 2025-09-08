@@ -4,11 +4,11 @@ from matrix_table_consumer.vcf_tools import VCFTools
 
 
 def test_filter() -> None:
-    vcf = "../matrix_table_consumer/data/test3.vcf"
-    output_vcf = "../matrix_table_consumer/data/test_filtered_output.vcf"
-    output_test_vcf_1 = "../matrix_table_consumer/data/test_filtered_1.vcf"
-    output_test_vcf_2 = "../matrix_table_consumer/data/test_filtered_2.vcf"
-    output_test_vcf_3 = "../matrix_table_consumer/data/test_filtered_3.vcf"
+    vcf = "../matrix_table_consumer/data/filter/test3.vcf"
+    output_vcf = "../matrix_table_consumer/data/filter/test_filtered_output.vcf"
+    output_test_vcf_1 = "../matrix_table_consumer/data/filter/test_filtered_1.vcf"
+    output_test_vcf_2 = "../matrix_table_consumer/data/filter/test_filtered_2.vcf"
+    output_test_vcf_3 = "../matrix_table_consumer/data/filter/test_filtered_3.vcf"
 
     vcftools = VCFTools()
 

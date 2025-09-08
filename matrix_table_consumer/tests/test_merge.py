@@ -4,10 +4,10 @@ from matrix_table_consumer.vcf_tools import VCFTools
 
 
 def test_merge() -> None:
-    vcf1 = "../matrix_table_consumer/data/test1.vcf"
-    vcf2 = "../matrix_table_consumer/data/test2.vcf"
-    output_vcf = "../matrix_table_consumer/data/test_merged_2.vcf"
-    output_test_vcf = "../matrix_table_consumer/data/test_merged.vcf"
+    vcf1 = "../matrix_table_consumer/data/merge/test1.vcf"
+    vcf2 = "../matrix_table_consumer/data/merge/test2.vcf"
+    output_vcf = "../matrix_table_consumer/data/merge/test_merged_2.vcf"
+    output_test_vcf = "../matrix_table_consumer/data/merge/test_merged.vcf"
 
     vcftools = VCFTools()
 
