@@ -404,16 +404,22 @@ func Merge(vcf1, vcf2, outputVCF string, is_gzip, is_gzip2 bool) {
 		LoggerError(s)
 	}
 
+	LoggerInfo("Writing headers...\n")
+
 	if err := writeHeaders(headers, outputVCF); err != nil {
 		s := fmt.Sprintf("Error: %v\n", err)
 		LoggerError(s)
 	}
+
+	LoggerInfo("Reading VCFs...\n")
 
 	records, samplesList, err := readVCFs(vcf1, vcf2, is_gzip, is_gzip2)
 	if err != nil {
 		s := fmt.Sprintf("Error: %v\n", err)
 		LoggerError(s)
 	}
+
+	LoggerInfo("Merging records...\n")
 
 	mergedRecords, err := mergeRecords(records)
 	if err != nil {
