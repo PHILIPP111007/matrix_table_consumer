@@ -49,7 +49,7 @@ vcf_tools -filter \
     -num_cpu 7
 ```
 
-You can merge `.vcf` files:
+You can merge `.vcf` files (now it is possible to merge multiple vcf files):
 
 ```bash
 vcf_tools -merge \
