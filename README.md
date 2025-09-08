@@ -42,7 +42,7 @@ You can look at the `benchmarks.md` file, which contains benchmark of my program
 You can filter `.vcf` and `.vcf.gz` files (`&&` and `||` operators is available):
 
 ```bash
-python matrix_table_consumer/vcf_tools.py -filter \
+vcf_tools -filter \
     -o ./data/test_1.vcf \
     -vcf ./data/ALL.chr1.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz \
     -i "(QUAL>=90 && AF>=0.00001) || AF>=0.001" \
@@ -52,7 +52,7 @@ python matrix_table_consumer/vcf_tools.py -filter \
 You can merge `.vcf` files:
 
 ```bash
-python matrix_table_consumer/vcf_tools.py -merge \
+vcf_tools -merge \
     -vcf ./data/test1.vcf \
     -vcf2 ./data/test2.vcf \
     -o ./data/test_merged.vcf
