@@ -100,9 +100,9 @@ def lazy_read(file_path: str):
 def view(vcf: str):
     def show_file(stdscr):
         stdscr.clear()
-        curses.curs_set(0)  # Hiding the cursor
-        screen_height, _ = stdscr.getmaxyx()
-        buffer_size = screen_height * 2  # Buffer zone size for comfortable scrolling
+        curses.curs_set(0)
+        screen_height, width = stdscr.getmaxyx()
+        buffer_size = screen_height * 2
         line_buffer = []
         generator = lazy_read(vcf)
         position = 0
@@ -118,38 +118,47 @@ def view(vcf: str):
                 except StopIteration:
                     max_position = len(line_buffer) - screen_height
 
-            # Checking the boundaries of the position
+            buffer_size += screen_height * 2
+
             if position < 0:
                 position = 0
-            elif position > max_position:
-                position = max_position or 0
+            elif max_position is not None and position > max_position:
+                position = max_position
 
-            # Displaying lines on the screen
             for idx in range(screen_height):
+                y = idx
+                x = 0
                 if position + idx < len(line_buffer):
-                    stdscr.addstr(idx, 0, line_buffer[position + idx])
+                    text_to_display = line_buffer[position + idx][: width // 2]
 
-            # Waiting for input event
+                    try:
+                        stdscr.addstr(y, x, text_to_display)
+                    except Exception:
+                        stdscr.addstr(
+                            y, x, "The line is longer than the terminal width"
+                        )
+
             key = stdscr.getch()
-            if key == ord("k"):  # Up arrow
+            if key == ord("k"):
                 position -= 1
-            elif key == ord("j"):  # Down arrow
+            elif key == ord("j"):
                 position += 1
-            elif key == ord("\n"):  # Move page down
+            elif key == ord("\n"):
                 position += screen_height
-            elif key == ord("/"):  # Go to the specified line
+            elif key == ord("/"):
                 stdscr.clear()
-                curses.echo()  # Turn on echo mode to display input
-                stdscr.addstr(0, 0, "Enter line number: ")
+                curses.echo()  # Включаем эхо-ввод текста
+                stdscr.addstr(0, 0, "Введите номер строки: ")
                 input_str = stdscr.getstr().decode("utf-8")
                 try:
                     new_pos = int(input_str.strip()) - 1
                     if new_pos >= 0:
-                        position = min(new_pos, len(line_buffer))
+                        position = new_pos
+                        buffer_size = position
                 except ValueError:
                     pass
                 finally:
-                    curses.noecho()  # Turn off echo mode
+                    curses.noecho()
             elif key == ord("q"):
                 break
 
