@@ -49,13 +49,28 @@ vcf_tools -filter \
     -num_cpu 7
 ```
 
-You can merge `.vcf` files (now it is possible to merge multiple vcf files):
+You can merge `.vcf` files:
 
 ```bash
 vcf_tools -merge \
     -vcf ./data/test1.vcf \
     -vcf2 ./data/test2.vcf \
     -o ./data/test_merged.vcf
+```
+
+Now it is possible to merge multiple vcf files:
+
+```bash
+vcf_tools -merge \
+    --file_with_vcfs ./data/vcfs.txt \
+    -o ./data/test_merged.vcf
+```
+
+Where vcfs.txt is:
+
+```txt
+./data/merge/test1.vcf
+./data/merge/test2.vcf
 ```
 
 To run tests, use:
