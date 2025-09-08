@@ -65,7 +65,7 @@ func Collect(num_rows int, start_row int, vcf_path string, is_gzip bool, num_cpu
 	buf := make([]byte, maxTokenSize)
 	scanner.Buffer(buf, maxTokenSize)
 
-	bar := New(num_rows, WithDescription("Collecting data"))
+	bar := NewTqdm(num_rows, WithDescription("Collecting data"))
 
 	for scanner.Scan() {
 		if strings.HasPrefix(scanner.Text(), "#") {

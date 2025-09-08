@@ -10,7 +10,7 @@ import (
 	"unicode/utf8"
 )
 
-func New(total int, options ...Option) *Tqdm {
+func NewTqdm(total int, options ...Option) *Tqdm {
 	t := &Tqdm{
 		total:       total,
 		current:     0,
