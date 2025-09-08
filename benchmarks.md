@@ -30,7 +30,6 @@ time python matrix_table_consumer/vcf_tools.py -filter \
     -o /home/phil/GitHub/matrix_table_consumer/data/test_1.vcf \
     -vcf /home/phil/GitHub/matrix_table_consumer/data/ALL.chr1.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz \
     -i "QUAL > 100" \
-    -gzip \
     -num_cpu 1
 ```
 
@@ -41,7 +40,6 @@ time python matrix_table_consumer/vcf_tools.py -filter \
     -o /home/phil/GitHub/matrix_table_consumer/data/test_1.vcf \
     -vcf /home/phil/GitHub/matrix_table_consumer/data/ALL.chr1.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz \
     -i "QUAL > 100" \
-    -gzip \
     -num_cpu 7
 ```
 
