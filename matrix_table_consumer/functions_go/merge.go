@@ -69,10 +69,6 @@ func parseVCFLine(line string, sampleNames []string) *VCFRecordWithSamples {
 	return record
 }
 
-func remove_from_slice(slice []*VCFRecordWithSamples, s int) []*VCFRecordWithSamples {
-	return append(slice[:s], slice[s+1:]...)
-}
-
 // readVCFHeaders reads headers from two VCF files
 func readVCFHeaders(vcf1, vcf2 string, is_gzip, is_gzip2 bool) ([]string, error) {
 	headers := make([]string, 0)
@@ -273,133 +269,25 @@ func readVCFs(vcf1, vcf2 string, is_gzip, is_gzip2 bool) ([]*VCFRecordWithSample
 	return records, samplesList, nil
 }
 
-// func mergeRecords(records []*VCFRecordWithSamples, samplesList []string, outputVCF string) error {
-// 	// Initialize files and decoders
-// 	for chunkIndex, chunkFile := range chunkFiles {
-// 		file, err := os.Open(chunkFile)
-// 		if err != nil {
-// 			// Close any already opened files
-// 			for j := range chunkIndex {
-// 				files[j].Close()
-// 			}
-// 			return fmt.Errorf("opening chunk file %s: %v", chunkFile, err)
-// 		}
-// 		files[chunkIndex] = file
-// 		decoders[chunkIndex] = gob.NewDecoder(file)
-
-// 		var records []*VCFRecordWithSamples
-// 		for {
-// 			var record VCFRecordWithSamples
-// 			err := decoders[chunkIndex].Decode(&record)
-// 			if err == io.EOF {
-// 				break
-// 			}
-// 			if err != nil {
-// 				return fmt.Errorf("decoding record from chunk %d: %v", chunkIndex, err)
-// 			}
-// 			records = append(records, &record)
-// 		}
-// 		currentRecords[chunkIndex] = records
-
-// 		s := fmt.Sprintf("Chunk file loaded (%s)\n", chunkFile)
-// 		LoggerInfo(s)
-// 	}
-
-// 	activeChunks := len(currentRecords)
-// 	for activeChunks > 0 {
-// 		// Find the minimum record
-// 		var minRecord *VCFRecordWithSamples
-// 		var minChunkIndex int = -1
-
-// 		for chunkIndex, records := range currentRecords {
-// 			if len(records) == 0 {
-// 				continue
-// 			}
-
-// 			currentRecord := records[0]
-// 			if minRecord == nil {
-// 				minRecord = currentRecord
-// 				minChunkIndex = chunkIndex
-// 				continue
-// 			}
-
-// 			// Compare chromosome and position
-// 			if currentRecord.Chrom < minRecord.Chrom {
-// 				minRecord = currentRecord
-// 				minChunkIndex = chunkIndex
-// 			} else if currentRecord.Chrom == minRecord.Chrom {
-// 				pos1, err1 := strconv.Atoi(currentRecord.Pos)
-// 				pos2, err2 := strconv.Atoi(minRecord.Pos)
-// 				if err1 != nil || err2 != nil {
-// 					continue
-// 				}
-// 				if pos1 < pos2 {
-// 					minRecord = currentRecord
-// 					minChunkIndex = chunkIndex
-// 				}
-// 			}
-// 		}
-
-// 		if minChunkIndex == -1 {
-// 			break // All records processed
-// 		}
-
-// 		// Collect ALL records with the same key from ALL chunks
-// 		key := [2]string{minRecord.Chrom, minRecord.Pos}
-// 		var recordsWithSameKey []*VCFRecordWithSamples
-// 		recordsWithSameKey = append(recordsWithSameKey, minRecord)
-
-// 		currentRecords[minChunkIndex] = currentRecords[minChunkIndex][1:]
-
-// 		if len(currentRecords[minChunkIndex]) == 0 {
-// 			delete(currentRecords, minChunkIndex)
-// 			activeChunks--
-// 		}
-
-// 		// Check other chunks for records with the same key
-// 		for chunkIndex, records := range currentRecords {
-// 			if len(records) == 0 {
-// 				continue
-// 			}
-
-// 			for i, record := range records {
-// 				if record.Chrom == key[0] && record.Pos == key[1] {
-// 					recordsWithSameKey = append(recordsWithSameKey, record)
-// 					currentRecords[chunkIndex] = remove_from_slice(currentRecords[chunkIndex], i)
-// 				}
-
-//					if len(currentRecords[chunkIndex]) == 0 {
-//						delete(currentRecords, chunkIndex)
-//						activeChunks--
-//					}
-//				}
-//			}
-//			// Merge all records with the same key
-//			mergedRecord := mergeRecordsForKey(key, recordsWithSameKey)
-//			writeMergedRecord(mergedRecord, samplesList, outputVCF)
-//		}
-//		return nil
-//	}
-
 func mergeRecords(records []*VCFRecordWithSamples) ([]*VCFRecordWithSamples, error) {
 	if len(records) == 0 {
 		return nil, nil
 	}
 
-	// Группируем записи по ключу (Chrom, Pos)
+	// Group records by key (Chrom, Pos)
 	recordsByKey := make(map[[2]string][]*VCFRecordWithSamples)
 	for _, record := range records {
 		key := [2]string{record.Chrom, record.Pos}
 		recordsByKey[key] = append(recordsByKey[key], record)
 	}
 
-	// Сортируем ключи для последовательной обработки
+	// Sorting keys for sequential processing
 	keys := make([][2]string, 0, len(recordsByKey))
 	for key := range recordsByKey {
 		keys = append(keys, key)
 	}
 
-	// Сортируем ключи по хромосоме и позиции
+	// Sort keys by chromosome and position
 	sort.Slice(keys, func(i, j int) bool {
 		if keys[i][0] != keys[j][0] {
 			return keys[i][0] < keys[j][0]
@@ -408,12 +296,12 @@ func mergeRecords(records []*VCFRecordWithSamples) ([]*VCFRecordWithSamples, err
 		posI, errI := strconv.Atoi(keys[i][1])
 		posJ, errJ := strconv.Atoi(keys[j][1])
 		if errI != nil || errJ != nil {
-			return keys[i][1] < keys[j][1] // fallback: лексикографическое сравнение
+			return keys[i][1] < keys[j][1] // lexicographic comparison
 		}
 		return posI < posJ
 	})
 
-	// Объединяем записи для каждого ключа
+	// Merge records for each key
 	var mergedRecords []*VCFRecordWithSamples
 	for _, key := range keys {
 		recordsWithSameKey := recordsByKey[key]
@@ -538,11 +426,15 @@ func Merge(vcf1, vcf2, outputVCF string, is_gzip, is_gzip2 bool) {
 		LoggerError(s)
 	}
 
-	bar := NewTqdm(len(mergedRecords), WithDescription("Merging data"))
+	bar := NewTqdm(len(mergedRecords), WithDescription("Write merged records"))
 	defer bar.Close()
 
 	for _, record := range mergedRecords {
-		writeMergedRecord(record, samplesList, outputVCF)
+		err := writeMergedRecord(record, samplesList, outputVCF)
+		if err != nil {
+			s := fmt.Sprintf("Error: %v\n", err)
+			LoggerError(s)
+		}
 		bar.Increment()
 	}
 }
