@@ -95,10 +95,7 @@ func readVCFHeaders(vcf1, vcf2 string, is_gzip, is_gzip2 bool) ([]string, error)
 		reader1 = bufio.NewReader(file1)
 	}
 
-	scanner1 := bufio.NewScanner(reader1)
-	const maxTokenSize = 1 << 21
-	buf := make([]byte, maxTokenSize)
-	scanner1.Buffer(buf, maxTokenSize)
+	scanner1 := GetScaner(reader1)
 	for scanner1.Scan() {
 		line := scanner1.Text()
 		if strings.HasPrefix(line, "##") {
@@ -133,9 +130,7 @@ func readVCFHeaders(vcf1, vcf2 string, is_gzip, is_gzip2 bool) ([]string, error)
 		reader2 = bufio.NewReader(file2)
 	}
 
-	scanner2 := bufio.NewScanner(reader2)
-	buf = make([]byte, maxTokenSize)
-	scanner2.Buffer(buf, maxTokenSize)
+	scanner2 := GetScaner(reader2)
 	for scanner2.Scan() {
 		line := scanner2.Text()
 		if strings.HasPrefix(line, "##") {

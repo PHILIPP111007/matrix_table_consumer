@@ -60,13 +60,8 @@ func Collect(num_rows int, start_row int, vcf_path string, is_gzip bool, num_cpu
 		go ParallelExtractRows(linesChan, &wg, resultsChan)
 	}
 
-	scanner := bufio.NewScanner(reader)
-	const maxTokenSize = 1 << 21
-	buf := make([]byte, maxTokenSize)
-	scanner.Buffer(buf, maxTokenSize)
-
 	bar := NewTqdm(num_rows, WithDescription("Collecting data"))
-
+	scanner := GetScaner(reader)
 	for scanner.Scan() {
 		if strings.HasPrefix(scanner.Text(), "#") {
 			continue
@@ -173,11 +168,7 @@ func CollectAll(vcf_path string, is_gzip bool, num_cpu int) string {
 		go ParallelExtractRows(linesChan, &wg, resultsChan)
 	}
 
-	scanner := bufio.NewScanner(reader)
-	const maxTokenSize = 1 << 21
-	buf := make([]byte, maxTokenSize)
-	scanner.Buffer(buf, maxTokenSize)
-
+	scanner := GetScaner(reader)
 	for scanner.Scan() {
 		line := scanner.Text()
 		if strings.HasPrefix(line, "#") {
@@ -264,11 +255,7 @@ func Count(vcf_path string, is_gzip bool) int {
 
 	rows_count := 0
 
-	scanner := bufio.NewScanner(reader)
-	const maxTokenSize = 1 << 21
-	buf := make([]byte, maxTokenSize)
-	scanner.Buffer(buf, maxTokenSize)
-
+	scanner := GetScaner(reader)
 	for scanner.Scan() && strings.HasPrefix(scanner.Text(), "#") {
 	}
 

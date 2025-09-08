@@ -2,6 +2,7 @@ package functions_go
 
 import (
 	"C"
+	"bufio"
 	"fmt"
 	"strconv"
 	"strings"
@@ -53,4 +54,12 @@ func ParallelExtractRows(lines <-chan string, wg *sync.WaitGroup, output chan<- 
 	for line := range lines {
 		output <- extractRow(line)
 	}
+}
+
+func GetScaner(reader *bufio.Reader) *bufio.Scanner {
+	scanner := bufio.NewScanner(reader)
+	const maxTokenSize = 1 << 21
+	buf := make([]byte, maxTokenSize)
+	scanner.Buffer(buf, maxTokenSize)
+	return scanner
 }
