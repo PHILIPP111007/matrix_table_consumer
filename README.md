@@ -3,7 +3,6 @@
 To install this package run (you need to have Go):
 
 ```bash
-pip install build
 pip install .
 ```
 
