@@ -4,7 +4,7 @@ import argparse
 import ctypes
 from datetime import datetime
 
-from matrix_table_consumer.functions_py import view_c
+from bio2zarr import vcf as vcf2zarr
 
 
 current_dir = os.path.dirname(__file__)
@@ -92,13 +92,26 @@ def merge(
     Merge(vcf1_encoded, vcf2_encoded, output_vcf_encoded, file_with_vcfs_encoded)
 
 
-def view(vcf: str):
-    if vcf and not os.path.exists(vcf):
+def view(vcf_path: str):
+    if vcf_path and not os.path.exists(vcf_path):
         logger_error("Input vcf not found")
         sys.exit(1)
 
     vcf_encoded = vcf.encode("utf-8")
     View(vcf_encoded)
+
+
+def save_vcf_as_zarr(vcf_path: str, output_vcz: str, num_cpu: int, show_progress: bool):
+    if vcf_path and not os.path.exists(vcf_path):
+        logger_error("Input vcf not found")
+        sys.exit(1)
+
+    vcf2zarr.convert(
+        vcfs=[vcf_path],
+        vcz_path=output_vcz,
+        worker_processes=num_cpu,
+        show_progress=show_progress,
+    )
 
 
 def main():
@@ -109,6 +122,12 @@ def main():
     )
     parser.add_argument(
         "-merge", required=False, action="store_true", help="Merge VCF files."
+    )
+    parser.add_argument(
+        "-save_vcf_as_zarr",
+        required=False,
+        action="store_true",
+        help="Save VCF in zarr format (.vcz).",
     )
     parser.add_argument(
         "-view",
@@ -148,6 +167,9 @@ def main():
         default=1,
         help="Number CPUs.",
     )
+    parser.add_argument(
+        "-show_progress", required=False, action="store_true", help="Show progress."
+    )
 
     args = parser.parse_args()
 
@@ -156,7 +178,7 @@ def main():
             include: str = args.include
             input_vcf: str = args.vcf
             output_vcf: str = args.output
-            num_cpu: bool = args.num_cpu
+            num_cpu: int = args.num_cpu
 
             if include and input_vcf and output_vcf:
                 filter(
@@ -183,10 +205,25 @@ def main():
             else:
                 logger_error("Provide args")
         elif args.view:
-            vcf: str = args.vcf
+            vcf_path: str = args.vcf
 
             if vcf:
-                view(vcf=vcf)
+                view(vcf_path=vcf_path)
+            else:
+                logger_error("Provide args")
+        elif args.save_vcf_as_zarr:
+            vcf_path: str = args.vcf
+            output_vcz: str = args.output
+            num_cpu: int = args.num_cpu
+            show_progress: bool = args.show_progress
+
+            if vcf_path and output_vcz:
+                save_vcf_as_zarr(
+                    vcf_path=vcf_path,
+                    output_vcz=output_vcz,
+                    num_cpu=num_cpu,
+                    show_progress=show_progress,
+                )
             else:
                 logger_error("Provide args")
     else:

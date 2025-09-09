@@ -90,6 +90,18 @@ Now you can view vcf files from terminal:
 vcf_tools -view -vcf ./data/merge/test_merged.vcf
 ```
 
+## Zarr
+
+You can convert `.vcf` file to zarr (.vcz) format:
+
+```bash
+vcf_tools -save_vcf_as_zarr \
+    -vcf ./data/ALL.chr1.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz \
+    -o ./data/test.vcz \
+    -show_progress \
+    -num_cpu 7
+```
+
 ## Tests
 
 To run tests, use:

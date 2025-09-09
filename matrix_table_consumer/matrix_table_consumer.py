@@ -14,10 +14,17 @@ from typing import TypeAlias
 
 from tqdm import tqdm
 import hail as hl
+from bio2zarr import vcf as vcf2zarr
+import zarr
 
-from matrix_table_consumer.functions_py.convert_rows_to_hail import (
-    convert_rows_to_hail_c,
-)
+
+import pyximport
+
+pyximport.install(language_level=3)
+
+from .functions_py import convert_rows_to_hail, sample_qc_analysis
+
+
 from matrix_table_consumer.functions_py.logger import logger_error, logger_info
 
 
@@ -113,6 +120,9 @@ class MatrixTableConsumer:
         self.vcf_path = vcf_path
         self.reference_genome = reference_genome
 
+        if not os.path.exists(self.vcf_path):
+            logger_error("Input vcf not found")
+
     def _extract_fields(self, obj) -> Content:
         """Returns JSON with uncompressed object classes"""
 
@@ -191,6 +201,8 @@ class MatrixTableConsumer:
     def prepare_metadata_for_saving(
         self, json_path: str, mt: hl.MatrixTable
     ) -> Content:
+        """Saves matrix table metadata to json format"""
+
         progress_bar = tqdm(total=2, desc="Extracting fields")
 
         content = self._extract_fields(obj=mt)
@@ -202,6 +214,8 @@ class MatrixTableConsumer:
         return content
 
     def prepare_metadata_for_loading(self, json_path: str) -> hl.MatrixTable:
+        """Loads table metadata"""
+
         progress_bar = tqdm(total=3, desc="Prepare metadata for loading")
         content = get_json(path=json_path)
         progress_bar.update(1)
@@ -215,6 +229,8 @@ class MatrixTableConsumer:
         return mt
 
     def collect(self, num_rows: int, num_cpu: int = 1) -> Rows:
+        """Gives `num_rows` rows from vcf file (it can also open vcf.gz)"""
+
         if not os.path.exists(self.vcf_path):
             logger_error("File not found")
             sys.exit(1)
@@ -228,6 +244,8 @@ class MatrixTableConsumer:
         return rows
 
     def collect_all(self, num_cpu: int = 1) -> Rows:
+        """Collects all table rows from vcf file (it can also open vcf.gz)"""
+
         if not os.path.exists(self.vcf_path):
             logger_error("File not found")
             sys.exit(1)
@@ -247,12 +265,16 @@ class MatrixTableConsumer:
         return c
 
     def convert_rows_to_hail(self, rows: Rows) -> list[hl.Struct]:
-        structs = convert_rows_to_hail_c(
+        """Converts rows to Matrix Table format"""
+
+        structs = convert_rows_to_hail.convert_rows_to_hail_c(
             rows=rows, reference_genome=self.reference_genome
         )
         return structs
 
     def create_hail_table(self, rows: Rows) -> hl.Table:
+        """Collects table from rows"""
+
         row_schema = hl.tstruct(
             locus=hl.tlocus(reference_genome=self.reference_genome),
             alleles=hl.tarray(hl.tstr),
@@ -272,6 +294,34 @@ class MatrixTableConsumer:
     ) -> hl.MatrixTable:
         mt = mt.annotate_rows(new_field=table[mt.locus])
         return mt
+
+    def save_vcf_as_zarr(
+        self,
+        output_vcz: str,
+        num_cpu: int = 1,
+        show_progress: bool = False,
+    ):
+        """Save VCF in zarr format (.vcz)"""
+
+        vcf2zarr.convert(
+            vcfs=[self.vcf_path],
+            vcz_path=output_vcz,
+            worker_processes=num_cpu,
+            show_progress=show_progress,
+        )
+
+    def load_zarr_data(self, vcz_path: str):
+        """Loads zarr data"""
+
+        if not os.path.exists(vcz_path):
+            logger_error("Input vcz not found")
+
+        data = zarr.open(vcz_path, mode="r")
+        return data
+
+    def sample_qc_analysis(self, zarr_data):
+        df = sample_qc_analysis.sample_qc_analysis_c(zarr_data=zarr_data)
+        return df
 
 
 if __name__ == "__main__":
