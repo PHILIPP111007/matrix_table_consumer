@@ -1,10 +1,12 @@
-# cython: language_level=3, boundscheck=False, wraparound=False, initializedcheck=False, cdivision=True, infer_types=True
-
 import cython
 from tqdm import tqdm
 import hail as hl
 
-
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.initializedcheck(False)
+@cython.cdivision(True)
+@cython.infer_types(True)
 def convert_rows_to_hail_c(rows: list[dict], reference_genome: str) -> list[hl.Struct]:
     """
     Converting strings from VCF format to Hail structure objects.
