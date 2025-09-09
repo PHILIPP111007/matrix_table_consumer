@@ -33,10 +33,10 @@ def sample_qc_analysis_c(zarr_data: Group):
     }
 
     progress_bar_1 = tqdm(
-        total=1, desc="Calculating QC metrics", position=0, leave=True
+        total=n_samples, desc="Calculating QC metrics", position=0, leave=True
     )
     sample_idx: cython.long
-    for sample_idx in range(1):
+    for sample_idx in range(n_samples):
         sample_genotypes: Array = genotypes[:, sample_idx, :]
 
         # Расчет call rate
