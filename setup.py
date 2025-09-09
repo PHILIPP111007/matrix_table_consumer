@@ -63,14 +63,14 @@ common_macros = [('NPY_NO_DEPRECATED_API', 'NPY_1_7_API_VERSION')]
 ext_modules = [
     Extension(
         name="matrix_table_consumer.functions_py.convert_rows_to_hail",
-        sources=["matrix_table_consumer/functions_py/convert_rows_to_hail.py"],  # .pyx вместо .py
+        sources=["matrix_table_consumer/functions_py/convert_rows_to_hail.py"],
         language="c",
         extra_compile_args=compile_args,
         define_macros=common_macros,
     ),
     Extension(
         name="matrix_table_consumer.functions_py.sample_qc_analysis", 
-        sources=["matrix_table_consumer/functions_py/sample_qc_analysis.py"],  # .pyx вместо .py
+        sources=["matrix_table_consumer/functions_py/sample_qc_analysis.pyx"],
         language="c",
         extra_compile_args=compile_args,
         include_dirs=[np.get_include()],
