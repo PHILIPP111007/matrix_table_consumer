@@ -17,14 +17,7 @@ import hail as hl
 from bio2zarr import vcf as vcf2zarr
 import zarr
 
-
-import pyximport
-
-pyximport.install(language_level=3)
-
 from .functions_py import convert_rows_to_hail, sample_qc_analysis
-
-
 from matrix_table_consumer.functions_py.logger import logger_error, logger_info
 
 

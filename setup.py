@@ -62,13 +62,13 @@ ext_modules = [
     Extension(name="main.so", sources=[]),
     Extension(
         name="matrix_table_consumer.functions_py.convert_rows_to_hail",
-        sources=["matrix_table_consumer/functions_py/convert_rows_to_hail.pyx"],
+        sources=["matrix_table_consumer/functions_py/convert_rows_to_hail.py"],
         language="c",
         extra_compile_args=compile_args,
     ),
     Extension(
         name="matrix_table_consumer.functions_py.sample_qc_analysis",
-        sources=["matrix_table_consumer/functions_py/sample_qc_analysis.pyx"],
+        sources=["matrix_table_consumer/functions_py/sample_qc_analysis.py"],
         language="c",
         extra_compile_args=compile_args,
         include_dirs=[np.get_include()],
