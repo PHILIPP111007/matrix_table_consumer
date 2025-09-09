@@ -15,6 +15,8 @@ export CGO_ENABLED=1
 go build -o main.so -buildmode=c-shared main.go
 ```
 
+## MatrixTableConsumer
+
 We have a class `MatrixTableConsumer`, which performs operations on Hail matrix table:
 
 - `MatrixTableConsumer().prepare_metadata_for_saving` saves matrix table metadata to json format
@@ -33,9 +35,9 @@ We have a class `MatrixTableConsumer`, which performs operations on Hail matrix 
 
 - `MatrixTableConsumer().count` returns number of rows in the vcf file
 
-___
-
 You can look at the `main.ipynb` file, which contains examples of using `MatrixTableConsumer`
+
+## Filter
 
 You can look at the `benchmarks.md` file, which contains benchmark of my program and bcftools
 
@@ -48,6 +50,8 @@ vcf_tools -filter \
     -i "(QUAL>=90 && AF>=0.00001) || AF>=0.001" \
     -num_cpu 7
 ```
+
+## Merge
 
 You can merge `.vcf` files:
 
@@ -73,11 +77,21 @@ Where vcfs.txt is:
 ./data/merge/test2.vcf
 ```
 
-Now you can view vcf files from terminal ("j" -> next line, "k" -> previous line, ENTER -> next page, "/" -> enter line number, "q" -> quit):
+## View
+
+Now you can view vcf files from terminal:
+
+* `j` -> next line
+*  `k` -> previous line
+*  `ENTER` -> next page
+*  `/` -> enter line number
+*  `q` -> quit
 
 ```bash
 vcf_tools -view -vcf ./data/merge/test_merged.vcf
 ```
+
+## Tests
 
 To run tests, use:
 
