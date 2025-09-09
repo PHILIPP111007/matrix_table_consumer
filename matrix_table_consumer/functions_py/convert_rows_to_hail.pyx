@@ -2,6 +2,7 @@ import cython
 from tqdm import tqdm
 import hail as hl
 
+
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.initializedcheck(False)
