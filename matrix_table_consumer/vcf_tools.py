@@ -13,6 +13,7 @@ library_path = os.path.join(current_dir, "main.so")
 lib = ctypes.CDLL(library_path)
 Filter = lib.Filter
 Merge = lib.Merge
+View = lib.View
 
 Filter.argtypes = [
     ctypes.c_char_p,
@@ -28,6 +29,11 @@ Merge.argtypes = [
     ctypes.c_char_p,
 ]
 Merge.restype = None
+
+View.argtypes = [
+    ctypes.c_char_p,
+]
+View.restype = None
 
 
 def get_time() -> str:
@@ -87,7 +93,12 @@ def merge(
 
 
 def view(vcf: str):
-    view_c(vcf=vcf)
+    if vcf and not os.path.exists(vcf):
+        logger_error("Input vcf not found")
+        sys.exit(1)
+
+    vcf_encoded = vcf.encode("utf-8")
+    View(vcf_encoded)
 
 
 def main():

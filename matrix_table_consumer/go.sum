@@ -1,2 +1,6 @@
 github.com/PHILIPP111007/govaluate v0.0.0-20250325060307-7625b7f8c03d h1:ETDSfCeEry+4KrSJlJHQu/JAQhOeDDGoweREKzPmGsE=
 github.com/PHILIPP111007/govaluate v0.0.0-20250325060307-7625b7f8c03d/go.mod h1:b9ZD33ykJmgS3+P5s4f8B5Mpi+B/IxeudF+mI8hpUlc=
+github.com/mattn/go-runewidth v0.0.9 h1:Lm995f3rfxdpd6TSmuVCHVb/QhupuXlYr8sCI/QdE+0=
+github.com/mattn/go-runewidth v0.0.9/go.mod h1:H031xJmbD/WCDINGzjvQ9THkh0rPKHF+m2gUSrubnMI=
+github.com/nsf/termbox-go v1.1.1 h1:nksUPLCb73Q++DwbYUBEglYBRPZyoXJdrj5L+TkjyZY=
+github.com/nsf/termbox-go v1.1.1/go.mod h1:T0cTdVuOwf7pHQNtfhnEbzHbcNyCEcVU4YPpouCbVxo=

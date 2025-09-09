@@ -45,11 +45,6 @@ ext_modules = [
         sources=["matrix_table_consumer/functions_py/convert_rows_to_hail.py"],
         language="c",
     ),
-    Extension(
-        "matrix_table_consumer.functions_py.view",
-        sources=["matrix_table_consumer/functions_py/view.py"],
-        language="c",
-    ),
 ]
 
 

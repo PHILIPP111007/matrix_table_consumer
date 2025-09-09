@@ -51,4 +51,11 @@ func Merge(vcf1_pointer *C.char, vcf2_pointer *C.char, output_vcf_pointer *C.cha
 	functions_go.Merge(vcf1, vcf2, output_vcf, file_with_vcfs)
 }
 
+//export View
+func View(vcf_pointer *C.char) {
+	vcf := C.GoString(vcf_pointer)
+
+	functions_go.ViewVCF(vcf)
+}
+
 func main() {}

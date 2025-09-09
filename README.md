@@ -81,11 +81,11 @@ Where vcfs.txt is:
 
 Now you can view vcf files from terminal:
 
-* `j` -> next line
-*  `k` -> previous line
+* `arrow down` -> next line
+*  `arrow up` -> previous line
 *  `ENTER` -> next page
-*  `/` -> enter line number
-*  `q` -> quit
+*  `SPACE` -> enter line number
+*  `ESC` -> quit
 
 ```bash
 vcf_tools -view -vcf ./data/merge/test_merged.vcf
