@@ -47,12 +47,6 @@ def sample_qc_analysis_c(zarr_data: Group):
         het_count: cython.long = 0
         total_calls: cython.long = 0
 
-        progress_bar_2 = tqdm(
-            total=n_variants,
-            desc="Handling variants",
-            position=1,
-            leave=False,
-        )
         variant_idx: cython.long
         for variant_idx in range(n_variants):
             gt = sample_genotypes[variant_idx]
@@ -60,8 +54,6 @@ def sample_qc_analysis_c(zarr_data: Group):
                 total_calls += 1
                 if gt[0] != gt[1]:
                     het_count += 1
-            progress_bar_2.update(1)
-        progress_bar_2.close()
 
         heterozygosity: cython.double = (
             het_count / total_calls if total_calls > 0 else 0.0
