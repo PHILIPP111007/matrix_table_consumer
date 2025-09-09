@@ -58,23 +58,25 @@ else:
     sys.exit(1)
 
 
+common_macros = [('NPY_NO_DEPRECATED_API', 'NPY_1_7_API_VERSION')]
+
 ext_modules = [
-    Extension(name="main.so", sources=[]),
     Extension(
         name="matrix_table_consumer.functions_py.convert_rows_to_hail",
-        sources=["matrix_table_consumer/functions_py/convert_rows_to_hail.py"],
+        sources=["matrix_table_consumer/functions_py/convert_rows_to_hail.py"],  # .pyx вместо .py
         language="c",
         extra_compile_args=compile_args,
+        define_macros=common_macros,
     ),
     Extension(
-        name="matrix_table_consumer.functions_py.sample_qc_analysis",
-        sources=["matrix_table_consumer/functions_py/sample_qc_analysis.py"],
+        name="matrix_table_consumer.functions_py.sample_qc_analysis", 
+        sources=["matrix_table_consumer/functions_py/sample_qc_analysis.py"],  # .pyx вместо .py
         language="c",
         extra_compile_args=compile_args,
         include_dirs=[np.get_include()],
+        define_macros=common_macros,
     ),
 ]
-
 
 setup(
     name="matrix_table_consumer",
@@ -85,11 +87,16 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     packages=find_packages(),
-    ext_modules=cythonize(ext_modules),
+    ext_modules=cythonize(
+        ext_modules,
+        annotate=False,
+        verbose=True,
+    ),
     cmdclass={"build_ext": BuildGoExtension},
     data_files=[
         ("", ["matrix_table_consumer/main.so"]),
         ("", ["matrix_table_consumer/main.h"]),
+        ("", ["matrix_table_consumer/functions_py/sample_qc_analysis.c"]),
     ],
     entry_points={
         "console_scripts": [

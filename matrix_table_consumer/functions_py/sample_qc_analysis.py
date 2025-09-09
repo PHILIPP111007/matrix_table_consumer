@@ -12,8 +12,7 @@ from zarr.hierarchy import Group
 @cython.initializedcheck(False)
 @cython.cdivision(True)
 @cython.infer_types(True)
-@cython.cfunc
-def sample_qc_analysis_c(zarr_data: Group):
+def sample_qc_analysis_c(zarr_data: Group) -> pd.DataFrame:
     """Sample quality analysis"""
 
     genotypes: Array = zarr_data["call_genotype"]
@@ -23,7 +22,6 @@ def sample_qc_analysis_c(zarr_data: Group):
     ploidy: cython.long
 
     n_variants, n_samples, ploidy = genotypes.shape
-    print(f"Total samples: {n_samples}")
 
     qc_metrics: dict[str, list[cython.long | cython.double]] = {
         "sample_id": [],
