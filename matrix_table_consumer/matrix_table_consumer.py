@@ -16,6 +16,9 @@ from tqdm import tqdm
 import hail as hl
 from bio2zarr import vcf as vcf2zarr
 import zarr
+from zarr.core import Array
+from zarr.hierarchy import Group
+import pandas as pd
 
 from .functions_py import convert_rows_to_hail, sample_qc_analysis
 from matrix_table_consumer.functions_py.logger import logger_error, logger_info
@@ -293,7 +296,7 @@ class MatrixTableConsumer:
         output_vcz: str,
         num_cpu: int = 1,
         show_progress: bool = False,
-    ):
+    ) -> None:
         """Save VCF in zarr format (.vcz)"""
 
         vcf2zarr.convert(
@@ -303,7 +306,7 @@ class MatrixTableConsumer:
             show_progress=show_progress,
         )
 
-    def load_zarr_data(self, vcz_path: str):
+    def load_zarr_data(self, vcz_path: str) -> Array | Group:
         """Loads zarr data"""
 
         if not os.path.exists(vcz_path):
@@ -312,10 +315,10 @@ class MatrixTableConsumer:
         data = zarr.open(vcz_path, mode="r")
         return data
 
-    def sample_qc_analysis(self, zarr_data):
+    def sample_qc_analysis(self, zarr_data: Array | Group) -> pd.DataFrame:
         """Sample quality analysis"""
 
-        df = sample_qc_analysis.sample_qc_analysis_c(zarr_data=zarr_data)
+        df: pd.DataFrame = sample_qc_analysis.sample_qc_analysis_c(zarr_data=zarr_data)
         return df
 
 
