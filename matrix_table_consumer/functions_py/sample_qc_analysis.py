@@ -16,6 +16,7 @@ def sample_qc_analysis_c(zarr_data: Group) -> pd.DataFrame:
     """Sample quality analysis"""
 
     genotypes: Array = zarr_data["call_genotype"]
+    sample_names: np.ndarray[str] = zarr_data["sample_id"][:]
 
     n_variants: cython.long
     n_samples: cython.long
@@ -23,7 +24,7 @@ def sample_qc_analysis_c(zarr_data: Group) -> pd.DataFrame:
 
     n_variants, n_samples, ploidy = genotypes.shape
 
-    qc_metrics: dict[str, list[cython.long | cython.double]] = {
+    qc_metrics: dict[str, list[cython.long | cython.double | str]] = {
         "sample_id": [],
         "call_rate": [],
         "heterozygosity": [],
@@ -31,34 +32,32 @@ def sample_qc_analysis_c(zarr_data: Group) -> pd.DataFrame:
     }
 
     progress_bar_1 = tqdm(
-        total=n_samples, desc="Calculating QC metrics", position=0, leave=True
+        total=2, desc="Calculating QC metrics", position=0, leave=True
     )
     sample_idx: cython.long
-    for sample_idx in range(n_samples):
+    for sample_idx in range(2):
         sample_genotypes: Array = genotypes[:, sample_idx, :]
+        sample_data = sample_genotypes[:]  # Явная загрузка в память
 
-        # Расчет call rate
-        missing_mask = sample_genotypes == -1  # Пропущенные генотипы
-        call_rate: cython.double = 1 - np.mean(np.any(missing_mask, axis=1))
+        missing_mask = (sample_data == -1)
+        missing_per_variant = np.any(missing_mask, axis=1)
+        call_rate: cython.double = 1 - np.mean(missing_per_variant)
 
         # Расчет гетерозиготности
-        het_count: cython.long = 0
-        total_calls: cython.long = 0
+        valid_mask = ~missing_per_variant
+        valid_data = sample_data[valid_mask]
+        
+        if len(valid_data) > 0:
+            if valid_data.shape[1] == 2:
+                heterozygosity = np.mean(valid_data[:, 0] != valid_data[:, 1])
+            else:
+                heterozygosity = np.mean([len(np.unique(gt)) > 1 for gt in valid_data])
+        else:
+            heterozygosity = 0.0
 
-        variant_idx: cython.long
-        for variant_idx in range(n_variants):
-            gt = sample_genotypes[variant_idx]
-            if not np.any(gt == -1):  # Пропуски не учитываем
-                total_calls += 1
-                if gt[0] != gt[1]:
-                    het_count += 1
-
-        heterozygosity: cython.double = (
-            het_count / total_calls if total_calls > 0 else 0.0
-        )
         missing_rate: cython.double = 1 - call_rate
 
-        qc_metrics["sample_id"].append(sample_idx)
+        qc_metrics["sample_id"].append(sample_names[sample_idx])
         qc_metrics["call_rate"].append(call_rate)
         qc_metrics["heterozygosity"].append(heterozygosity)
         qc_metrics["missing_rate"].append(missing_rate)

@@ -70,7 +70,7 @@ ext_modules = [
     ),
     Extension(
         name="matrix_table_consumer.functions_py.sample_qc_analysis", 
-        sources=["matrix_table_consumer/functions_py/sample_qc_analysis.pyx"],
+        sources=["matrix_table_consumer/functions_py/sample_qc_analysis.py"],
         language="c",
         extra_compile_args=compile_args,
         include_dirs=[np.get_include()],
