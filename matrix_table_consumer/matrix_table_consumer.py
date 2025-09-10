@@ -313,6 +313,8 @@ class MatrixTableConsumer:
         return data
 
     def sample_qc_analysis(self, zarr_data):
+        """Sample quality analysis"""
+
         df = sample_qc_analysis.sample_qc_analysis_c(zarr_data=zarr_data)
         return df
 

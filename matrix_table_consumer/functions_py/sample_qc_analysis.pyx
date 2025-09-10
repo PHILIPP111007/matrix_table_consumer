@@ -14,7 +14,7 @@ from tqdm import tqdm
 @cython.cdivision(True)
 @cython.infer_types(True)
 def sample_qc_analysis_c(zarr_data: Group) -> pd.DataFrame:
-    """Анализ качества образцов"""
+    """Sample quality analysis"""
 
     genotypes: Array = zarr_data["call_genotype"]
     sample_names: np.ndarray[str] = zarr_data["sample_id"][:]

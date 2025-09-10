@@ -90,7 +90,7 @@ Now you can view vcf files from terminal:
 vcf_tools -view -vcf ./data/merge/test_merged.vcf
 ```
 
-## Zarr
+## Zarr format
 
 You can convert `.vcf` file to zarr (.vcz) format:
 
@@ -101,6 +101,12 @@ vcf_tools -save_vcf_as_zarr \
     -show_progress \
     -num_cpu 7
 ```
+
+- `MatrixTableConsumer().save_vcf_as_zarr` convert `.vcf` file to zarr (.vcz) format
+
+- `MatrixTableConsumer().load_zarr_data` loads zarr data
+
+- `MatrixTableConsumer().sample_qc_analysis` sample quality analysis
 
 ## Tests
 
