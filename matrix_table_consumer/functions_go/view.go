@@ -51,10 +51,10 @@ func drawTextAt(x, y int, text string) {
 	}
 }
 
-func truncateString(s string, maxWidth int) string {
+func truncateString(s string, bias, maxWidth int) string {
 	runes := []rune(s)
 	if len(runes) > maxWidth {
-		return string(runes[:maxWidth])
+		return string(runes[bias:maxWidth])
 	}
 	return s
 }
@@ -77,7 +77,10 @@ func ViewVCF(vcfFile string) error {
 	gen := lazyRead(vcfFile)
 	termbox.HideCursor()
 
+	flag := ""
+	bias := 0
 	for {
+
 		termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
 
 		for len(lineBuffer) <= bufferSize && maxPosition == -1 {
@@ -107,7 +110,20 @@ func ViewVCF(vcfFile string) error {
 
 			idx := position + i
 			if idx < len(lineBuffer) {
-				textToDisplay := truncateString(lineBuffer[idx], width)
+				switch flag {
+				case "right":
+					bias += 1
+				case "left":
+					bias -= 1
+					if bias < 0 {
+						bias = 0
+					}
+					flag = ""
+				case "":
+					bias = 0
+				}
+
+				textToDisplay := truncateString(lineBuffer[idx], bias, width)
 				drawTextAt(x, y, textToDisplay)
 			}
 		}
@@ -123,6 +139,10 @@ func ViewVCF(vcfFile string) error {
 				position--
 			case termbox.KeyArrowDown:
 				position++
+			case termbox.KeyArrowRight:
+				flag = "right"
+			case termbox.KeyArrowLeft:
+				flag = "left"
 			case termbox.KeyEnter:
 				position += height
 			case termbox.KeyCtrlC, termbox.KeyEsc:

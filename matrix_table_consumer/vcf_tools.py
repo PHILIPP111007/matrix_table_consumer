@@ -97,7 +97,7 @@ def view(vcf_path: str):
         logger_error("Input vcf not found")
         sys.exit(1)
 
-    vcf_encoded = vcf.encode("utf-8")
+    vcf_encoded = vcf_path.encode("utf-8")
     View(vcf_encoded)
 
 
@@ -207,7 +207,7 @@ def main():
         elif args.view:
             vcf_path: str = args.vcf
 
-            if vcf:
+            if vcf_path:
                 view(vcf_path=vcf_path)
             else:
                 logger_error("Provide args")

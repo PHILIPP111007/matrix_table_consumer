@@ -115,3 +115,7 @@ To run tests, use:
 ```bash
 pytest
 ```
+
+
+
+vcf_tools -view -vcf ./data/ALL.chr1.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz
