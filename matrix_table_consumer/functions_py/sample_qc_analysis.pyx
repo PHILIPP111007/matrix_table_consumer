@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+cimport numpy as np
 
 from tqdm import tqdm
 import cython
@@ -32,10 +33,10 @@ def sample_qc_analysis_c(zarr_data: Group) -> pd.DataFrame:
     }
 
     progress_bar_1 = tqdm(
-        total=2, desc="Calculating QC metrics", position=0, leave=True
+        total=n_samples, desc="Calculating QC metrics", position=0, leave=True
     )
     sample_idx: cython.long
-    for sample_idx in range(2):
+    for sample_idx in range(n_samples):
         sample_genotypes: Array = genotypes[:, sample_idx, :]
         sample_data = sample_genotypes[:]  # Явная загрузка в память
 
