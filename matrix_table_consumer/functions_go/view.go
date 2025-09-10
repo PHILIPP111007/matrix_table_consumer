@@ -107,14 +107,13 @@ func ViewVCF(vcfFile string) error {
 		switch flag {
 		case "right":
 			bias += 1
+			flag = ""
 		case "left":
 			bias -= 1
 			if bias < 0 {
 				bias = 0
 			}
 			flag = ""
-		case "":
-			bias = 0
 		}
 
 		for i := range height {
@@ -123,7 +122,14 @@ func ViewVCF(vcfFile string) error {
 
 			idx := position + i
 			if idx < len(lineBuffer) {
-				textToDisplay := truncateString(lineBuffer[idx], bias, width)
+				biasLocal := bias
+				maxWidth := width + biasLocal
+
+				if biasLocal >= len(lineBuffer[idx]) {
+					biasLocal = len(lineBuffer[idx]) - 1
+					maxWidth = width + biasLocal
+				}
+				textToDisplay := truncateString(lineBuffer[idx], biasLocal, maxWidth)
 				drawTextAt(x, y, textToDisplay)
 			}
 		}
