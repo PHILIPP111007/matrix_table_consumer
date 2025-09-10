@@ -104,25 +104,25 @@ func ViewVCF(vcfFile string) error {
 			position = maxPosition
 		}
 
+		switch flag {
+		case "right":
+			bias += 1
+		case "left":
+			bias -= 1
+			if bias < 0 {
+				bias = 0
+			}
+			flag = ""
+		case "":
+			bias = 0
+		}
+
 		for i := range height {
 			y := i
 			x := 0
 
 			idx := position + i
 			if idx < len(lineBuffer) {
-				switch flag {
-				case "right":
-					bias += 1
-				case "left":
-					bias -= 1
-					if bias < 0 {
-						bias = 0
-					}
-					flag = ""
-				case "":
-					bias = 0
-				}
-
 				textToDisplay := truncateString(lineBuffer[idx], bias, width)
 				drawTextAt(x, y, textToDisplay)
 			}
@@ -137,17 +137,22 @@ func ViewVCF(vcfFile string) error {
 			switch keyCode {
 			case termbox.KeyArrowUp:
 				position--
+				flag = ""
 			case termbox.KeyArrowDown:
 				position++
+				flag = ""
 			case termbox.KeyArrowRight:
 				flag = "right"
 			case termbox.KeyArrowLeft:
 				flag = "left"
 			case termbox.KeyEnter:
+				flag = ""
 				position += height
 			case termbox.KeyCtrlC, termbox.KeyEsc:
+				flag = ""
 				return nil
 			case termbox.KeySpace:
+				flag = ""
 				termbox.Close()
 				fmt.Print("Go to line: ")
 				var inputStr string
