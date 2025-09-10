@@ -82,6 +82,8 @@ Now you can view vcf files from terminal:
 
 * `arrow down` -> next line
 *  `arrow up` -> previous line
+*  `arrow right` -> right
+*  `arrow left` -> left
 *  `ENTER` -> next page
 *  `SPACE` -> enter line number
 *  `ESC` -> quit
