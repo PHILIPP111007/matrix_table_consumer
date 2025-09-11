@@ -10,11 +10,6 @@ from .functions_py.sort import sort_vcf
 from .functions_py.index import index_vcf
 from .functions_py.logger import logger_error
 
-try:
-    from .functions_py import sort
-except ImportError:
-    logger_error("No module named convert_rows_to_hail and sample_qc_analysis")
-
 
 current_dir = os.path.dirname(__file__)
 library_path = os.path.join(current_dir, "main.so")
@@ -136,7 +131,7 @@ def index(vcf_path):
         logger_error("Input vcf not found")
         sys.exit(1)
 
-    index_vcf(input_vcf=vcf_path)
+    index_vcf(vcf_path=vcf_path)
 
 
 def main():
@@ -150,6 +145,9 @@ def main():
     )
     parser.add_argument(
         "-sort", required=False, action="store_true", help="Sort VCF file."
+    )
+    parser.add_argument(
+        "-index", required=False, action="store_true", help="Index VCF file."
     )
     parser.add_argument(
         "-save_vcf_as_zarr",

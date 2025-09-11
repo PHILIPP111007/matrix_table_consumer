@@ -100,6 +100,13 @@ vcf_tools -sort \
     -o ./data/sort/test_sorted.vcf
 ```
 
+## Index
+
+```bash
+vcf_tools -index \
+    -vcf ./data/test.vcf.gz
+```
+
 ## Zarr format
 
 You can convert `.vcf` file to zarr (.vcz) format:
