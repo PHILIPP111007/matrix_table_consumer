@@ -204,6 +204,14 @@ def main():
         help="Number CPUs.",
     )
     parser.add_argument(
+        "-chunk_size",
+        "--chunk_size",
+        type=int,
+        required=False,
+        default=100_000,
+        help="Chunk size for sorting function.",
+    )
+    parser.add_argument(
         "-show_progress", required=False, action="store_true", help="Show progress."
     )
 
@@ -265,9 +273,10 @@ def main():
         elif args.sort:
             vcf_path: str = args.vcf
             output_vcf: str = args.output
+            chunk_size: int = args.chunk_size
 
             if vcf_path and output_vcf:
-                sort(vcf_path=vcf_path, output_vcf=output_vcf)
+                sort(vcf_path=vcf_path, output_vcf=output_vcf, chunk_size=chunk_size)
             else:
                 logger_error("Provide args")
         elif args.index:
