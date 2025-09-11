@@ -3,6 +3,8 @@ import os
 import tempfile
 from typing import List, Tuple, Iterator
 
+from .logger import logger_info, logger_error
+
 
 def sort_vcf(input_vcf: str, output_vcf: str, chunk_size: int = 1_000_000):
     def chromosome_key(chrom: str) -> tuple[int, int]:
@@ -79,6 +81,7 @@ def sort_vcf(input_vcf: str, output_vcf: str, chunk_size: int = 1_000_000):
     try:
         # Create a temporary directory
         temp_dir = tempfile.mkdtemp()
+        logger_info(f"Temp dir: {temp_dir}")
         temp_files = []
 
         open_func = gzip.open if input_vcf.endswith(".gz") else open
@@ -112,6 +115,7 @@ def sort_vcf(input_vcf: str, output_vcf: str, chunk_size: int = 1_000_000):
                 # Sort and save the chunk
                 temp_file = os.path.join(temp_dir, f"chunk_{chunk_count}.tmp")
                 write_chunk(chunk, temp_file)
+                logger_info(f"Saved chunk in {temp_file}")
                 temp_files.append(temp_file)
                 chunk_count += 1
 
@@ -137,10 +141,10 @@ def sort_vcf(input_vcf: str, output_vcf: str, chunk_size: int = 1_000_000):
             os.remove(merged_temp)
         os.rmdir(temp_dir)
 
-        print(f"Successfully sorted {chunk_count} chunks")
+        logger_info(f"Successfully sorted {chunk_count} chunks")
 
     except Exception as e:
-        print(f"Error: {e}")
+        logger_error(f"Error: {e}")
         try:
             for temp_file in temp_files:
                 if os.path.exists(temp_file):
