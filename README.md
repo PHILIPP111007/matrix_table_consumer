@@ -125,26 +125,3 @@ To run tests, use:
 ```bash
 pytest tests
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-vcf_tools -sort \
-    -vcf /home/phil/GitHub/matrix_table_consumer/data/ALL.chr1.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz \
-    -o /home/phil/GitHub/matrix_table_consumer/data/test_sorted_1.vcf
-
-
-
-vcf_tools -sort \
-    -vcf /home/phil/GitHub/matrix_table_consumer/data/sort/test.vcf \
-    -o /home/phil/GitHub/matrix_table_consumer/data/test_sorted.vcf

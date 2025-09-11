@@ -76,6 +76,13 @@ ext_modules = [
         include_dirs=[np.get_include()],
         define_macros=common_macros,
     ),
+    Extension(
+        name="matrix_table_consumer.functions_py.sort",
+        sources=["matrix_table_consumer/functions_py/sort.pyx"],
+        language="c",
+        extra_compile_args=compile_args,
+        define_macros=common_macros,
+    ),
 ]
 
 setup(
