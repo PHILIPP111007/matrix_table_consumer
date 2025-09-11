@@ -6,6 +6,8 @@ from datetime import datetime
 
 from bio2zarr import vcf as vcf2zarr
 
+from matrix_table_consumer.functions_py.sort import sort_vcf
+
 
 current_dir = os.path.dirname(__file__)
 library_path = os.path.join(current_dir, "main.so")
@@ -114,6 +116,14 @@ def save_vcf_as_zarr(vcf_path: str, output_vcz: str, num_cpu: int, show_progress
     )
 
 
+def sort(vcf_path: str, output_vcf: str):
+    if not os.path.exists(vcf_path):
+        logger_error("Input vcf not found")
+        sys.exit(1)
+
+    sort_vcf(input_vcf=vcf_path, output_vcf=output_vcf)
+
+
 def main():
     parser = argparse.ArgumentParser()
 
@@ -122,6 +132,9 @@ def main():
     )
     parser.add_argument(
         "-merge", required=False, action="store_true", help="Merge VCF files."
+    )
+    parser.add_argument(
+        "-sort", required=False, action="store_true", help="Sort VCF file."
     )
     parser.add_argument(
         "-save_vcf_as_zarr",
@@ -226,6 +239,15 @@ def main():
                 )
             else:
                 logger_error("Provide args")
+        elif args.sort:
+            vcf_path: str = args.vcf_path
+            output_vcf: str = args.output
+            if vcf_path and output_vcf:
+
+                sort(vcf_path=vcf_path, output_vcf=output_vcf)
+            else:
+                logger_error("Provide args")
+
     else:
         logger_error("Provide args")
 

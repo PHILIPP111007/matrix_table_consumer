@@ -120,4 +120,13 @@ pytest
 
 
 
-vcf_tools -view -vcf ./data/ALL.chr1.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz
+
+
+
+
+
+
+
+vcf_tools -sort \
+    -vcf ./data/sort/test.vcf \
+    -o ./data/sort/test_sorted.vcf

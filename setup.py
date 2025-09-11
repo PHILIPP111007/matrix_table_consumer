@@ -58,7 +58,7 @@ else:
     sys.exit(1)
 
 
-common_macros = [('NPY_NO_DEPRECATED_API', 'NPY_1_7_API_VERSION')]
+common_macros = [("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")]
 
 ext_modules = [
     Extension(
@@ -69,7 +69,7 @@ ext_modules = [
         define_macros=common_macros,
     ),
     Extension(
-        name="matrix_table_consumer.functions_py.sample_qc_analysis", 
+        name="matrix_table_consumer.functions_py.sample_qc_analysis",
         sources=["matrix_table_consumer/functions_py/sample_qc_analysis.pyx"],
         language="c",
         extra_compile_args=compile_args,
