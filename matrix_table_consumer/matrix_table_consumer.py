@@ -20,7 +20,7 @@ from zarr.core import Array
 from zarr.hierarchy import Group
 import pandas as pd
 
-from .functions_py import convert_rows_to_hail, sample_qc_analysis
+from matrix_table_consumer.functions_py import convert_rows_to_hail, sample_qc_analysis
 from matrix_table_consumer.functions_py.logger import logger_error, logger_info
 
 

@@ -123,5 +123,5 @@ vcf_tools -save_vcf_as_zarr \
 To run tests, use:
 
 ```bash
-pytest
+pytest tests
 ```

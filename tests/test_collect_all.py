@@ -136,9 +136,13 @@ test_text = [
 
 
 def test_collect_all() -> None:
-    vcf_path = "../matrix_table_consumer/data/collect/test1.vcf"
+    vcf_path = "./data/collect/test1.vcf"
 
     consumer = MatrixTableConsumer(vcf_path=vcf_path, reference_genome="GRCh37")
 
     rows = consumer.collect_all(num_cpu=1)
     assert rows == test_text, rows
+
+
+if __name__ == "__main__":
+    test_collect_all()
