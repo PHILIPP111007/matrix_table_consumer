@@ -131,12 +131,12 @@ def sort(vcf_path: str, output_vcf: str):
     sort_vcf(input_vcf=vcf_path, output_vcf=output_vcf)
 
 
-def index(vcf_path, index_type="csi"):
+def index(vcf_path):
     if not os.path.exists(vcf_path):
         logger_error("Input vcf not found")
         sys.exit(1)
 
-    index_vcf(input_vcf=vcf_path, index_type=index_type)
+    index_vcf(input_vcf=vcf_path)
 
 
 def main():
@@ -260,6 +260,13 @@ def main():
 
             if vcf_path and output_vcf:
                 sort(vcf_path=vcf_path, output_vcf=output_vcf)
+            else:
+                logger_error("Provide args")
+        elif args.index:
+            vcf_path: str = args.vcf
+
+            if vcf_path:
+                index(vcf_path=vcf_path)
             else:
                 logger_error("Provide args")
 
