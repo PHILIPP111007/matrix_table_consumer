@@ -38,8 +38,5 @@ def sort_vcf(input_vcf: str, output_vcf: str):
 
             for chrom, pos, line in records:
                 file.write(line)
-
-        print(f"Файл успешно отсортирован: {output_vcf}")
-
     except Exception as e:
-        print(f"Ошибка при сортировке: {e}", file=sys.stderr)
+        print(f"Error: {e}")
