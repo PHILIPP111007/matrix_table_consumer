@@ -26,7 +26,6 @@ def sort_vcf(input_vcf: str, output_vcf: str):
                 if line.startswith("#"):
                     header_lines.append(line)
                 else:
-                    # Парсим данные варианта
                     parts = line.strip().split("\t")
                     if len(parts) >= 2:
                         chrom, pos = parts[0], int(parts[1])
