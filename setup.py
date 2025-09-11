@@ -114,6 +114,7 @@ setup(
         "pytest==8.4.1",
         "bio2zarr[vcf]==0.1.6",
         "zarr==2.18.7",
+        "pysam==0.23.3",
     ],
     classifiers=[
         "Programming Language :: Python :: 3",

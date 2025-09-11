@@ -7,6 +7,7 @@ from datetime import datetime
 from bio2zarr import vcf as vcf2zarr
 
 from .functions_py.sort import sort_vcf
+from .functions_py.index import index_vcf
 
 
 current_dir = os.path.dirname(__file__)
@@ -122,6 +123,14 @@ def sort(vcf_path: str, output_vcf: str):
         sys.exit(1)
 
     sort_vcf(input_vcf=vcf_path, output_vcf=output_vcf)
+
+
+def index(vcf_path, index_type="csi"):
+    if not os.path.exists(vcf_path):
+        logger_error("Input vcf not found")
+        sys.exit(1)
+
+    index_vcf(input_vcf=vcf_path, index_type=index_type)
 
 
 def main():
