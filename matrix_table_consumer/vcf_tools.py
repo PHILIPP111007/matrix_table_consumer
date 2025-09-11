@@ -240,10 +240,10 @@ def main():
             else:
                 logger_error("Provide args")
         elif args.sort:
-            vcf_path: str = args.vcf_path
+            vcf_path: str = args.vcf
             output_vcf: str = args.output
-            if vcf_path and output_vcf:
 
+            if vcf_path and output_vcf:
                 sort(vcf_path=vcf_path, output_vcf=output_vcf)
             else:
                 logger_error("Provide args")

@@ -1,6 +1,6 @@
 import os
 
-from matrix_table_consumer.vcf_tools import VCFTools
+from matrix_table_consumer import vcf_tools
 
 
 def test_filter() -> None:
@@ -10,9 +10,7 @@ def test_filter() -> None:
     output_test_vcf_2 = "../matrix_table_consumer/data/filter/test_filtered_2.vcf"
     output_test_vcf_3 = "../matrix_table_consumer/data/filter/test_filtered_3.vcf"
 
-    vcftools = VCFTools()
-
-    vcftools.filter(
+    vcf_tools.filter(
         include="FILTER=='PASS'",
         input_vcf=vcf,
         output_vcf=output_vcf,
@@ -46,7 +44,7 @@ def test_filter() -> None:
         assert file1 == file2
     os.remove(output_vcf)
 
-    vcftools.filter(
+    vcf_tools.filter(
         include="(AF>=0.03 || AC>=2)",
         input_vcf=vcf,
         output_vcf=output_vcf,

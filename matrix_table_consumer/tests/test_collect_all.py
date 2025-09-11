@@ -1,4 +1,4 @@
-from matrix_table_consumer import MatrixTableConsumer
+from matrix_table_consumer.matrix_table_consumer import MatrixTableConsumer
 
 
 test_text = [

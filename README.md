@@ -61,7 +61,7 @@ vcf_tools -merge \
     -o ./data/test_merged.vcf
 ```
 
-Now it is possible to merge multiple vcf files:
+It is possible to merge multiple vcf files:
 
 ```bash
 vcf_tools -merge \
@@ -78,7 +78,7 @@ Where vcfs.txt is:
 
 ## View
 
-Now you can view vcf files from terminal:
+You can view vcf files from terminal:
 
 * `arrow down` -> next line
 *  `arrow up` -> previous line
@@ -90,6 +90,14 @@ Now you can view vcf files from terminal:
 
 ```bash
 vcf_tools -view -vcf ./data/merge/test_merged.vcf
+```
+
+## Sort
+
+```bash
+vcf_tools -sort \
+    -vcf ./data/sort/test.vcf \
+    -o ./data/sort/test_sorted.vcf
 ```
 
 ## Zarr format
@@ -117,16 +125,3 @@ To run tests, use:
 ```bash
 pytest
 ```
-
-
-
-
-
-
-
-
-
-
-vcf_tools -sort \
-    -vcf ./data/sort/test.vcf \
-    -o ./data/sort/test_sorted.vcf
