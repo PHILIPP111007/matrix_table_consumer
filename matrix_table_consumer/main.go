@@ -2,12 +2,11 @@ package main
 
 import (
 	"C"
-
-	functions "functions_go/functions_go"
 )
 
 import (
 	"functions_go/functions_go"
+	functions "functions_go/functions_go"
 )
 
 //export CollectAll
