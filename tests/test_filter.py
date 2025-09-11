@@ -1,6 +1,6 @@
 import os
 
-from matrix_table_consumer import vcf_tools
+from ..matrix_table_consumer import vcf_tools
 
 
 def test_filter() -> None:
@@ -60,7 +60,3 @@ def test_filter() -> None:
 
         assert file1 == file2
     os.remove(output_vcf)
-
-
-if __name__ == "__main__":
-    test_filter()

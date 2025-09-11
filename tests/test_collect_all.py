@@ -142,7 +142,3 @@ def test_collect_all() -> None:
 
     rows = consumer.collect_all(num_cpu=1)
     assert rows == test_text, rows
-
-
-if __name__ == "__main__":
-    test_collect_all()

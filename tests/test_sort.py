@@ -1,6 +1,6 @@
 import os
 
-from matrix_table_consumer import vcf_tools
+from ..matrix_table_consumer import vcf_tools
 
 
 def test_sort() -> None:
@@ -23,7 +23,3 @@ def test_sort() -> None:
         assert output_test_file_text == output_file_text
 
     os.remove(output_vcf)
-
-
-if __name__ == "__main__":
-    test_sort()

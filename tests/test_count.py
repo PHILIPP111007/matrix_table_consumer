@@ -7,7 +7,3 @@ def test_count() -> None:
 
     count = consumer.count()
     assert count == 13, count
-
-
-if __name__ == "__main__":
-    test_count()

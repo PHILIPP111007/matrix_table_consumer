@@ -20,8 +20,12 @@ from zarr.core import Array
 from zarr.hierarchy import Group
 import pandas as pd
 
-from matrix_table_consumer.functions_py import convert_rows_to_hail, sample_qc_analysis
-from matrix_table_consumer.functions_py.logger import logger_error, logger_info
+from .functions_py.logger import logger_error, logger_info
+
+try:
+    from .functions_py import convert_rows_to_hail, sample_qc_analysis
+except ImportError:
+    logger_error("No module named convert_rows_to_hail and sample_qc_analysis")
 
 
 NUM_CPU = multiprocessing.cpu_count()

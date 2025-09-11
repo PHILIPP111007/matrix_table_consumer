@@ -6,7 +6,7 @@ from datetime import datetime
 
 from bio2zarr import vcf as vcf2zarr
 
-from matrix_table_consumer.functions_py.sort import sort_vcf
+from .functions_py.sort import sort_vcf
 
 
 current_dir = os.path.dirname(__file__)
