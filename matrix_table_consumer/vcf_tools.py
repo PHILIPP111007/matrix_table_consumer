@@ -6,7 +6,6 @@ from datetime import datetime
 
 from bio2zarr import vcf as vcf2zarr
 
-from .functions_py.sort import sort_vcf
 from .functions_py.index import index_vcf
 from .functions_py.logger import logger_error
 
@@ -17,6 +16,7 @@ library_path = os.path.join(current_dir, "main.so")
 lib = ctypes.CDLL(library_path)
 Filter = lib.Filter
 Merge = lib.Merge
+Sort = lib.Sort
 View = lib.View
 
 Filter.argtypes = [
@@ -33,6 +33,13 @@ Merge.argtypes = [
     ctypes.c_char_p,
 ]
 Merge.restype = None
+
+Sort.argtypes = [
+    ctypes.c_char_p,
+    ctypes.c_char_p,
+    ctypes.c_int,
+]
+Sort.restype = None
 
 View.argtypes = [
     ctypes.c_char_p,
@@ -118,15 +125,18 @@ def save_vcf_as_zarr(vcf_path: str, output_vcz: str, num_cpu: int, show_progress
     )
 
 
-def sort(vcf_path: str, output_vcf: str):
+def sort(vcf_path: str, output_vcf: str, chunk_size: int):
     if not os.path.exists(vcf_path):
         logger_error("Input vcf not found")
         sys.exit(1)
 
-    sort_vcf(input_vcf=vcf_path, output_vcf=output_vcf)
+    vcf_path_encoded = vcf_path.encode("utf-8")
+    output_vcf_path_encoded = output_vcf.encode("utf-8")
+
+    Sort(vcf_path_encoded, output_vcf_path_encoded, chunk_size)
 
 
-def index(vcf_path):
+def index(vcf_path: str):
     if not os.path.exists(vcf_path):
         logger_error("Input vcf not found")
         sys.exit(1)
