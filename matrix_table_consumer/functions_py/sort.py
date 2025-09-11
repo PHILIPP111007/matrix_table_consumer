@@ -133,12 +133,13 @@ def sort_vcf(input_vcf: str, output_vcf: str, chunk_size: int = 1_000_000):
             with open(output_vcf, "w") as out, open(merged_temp, "r") as temp:
                 out.writelines(header_lines)
                 out.writelines(temp)
+            
+            if os.path.exists(merged_temp):
+                os.remove(merged_temp)
 
         # Clearing temporary files
         for temp_file in temp_files:
             os.remove(temp_file)
-        if os.path.exists(merged_temp):
-            os.remove(merged_temp)
         os.rmdir(temp_dir)
 
         logger_info(f"Successfully sorted {chunk_count} chunks")

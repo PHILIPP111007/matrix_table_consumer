@@ -8,6 +8,12 @@ from bio2zarr import vcf as vcf2zarr
 
 from .functions_py.sort import sort_vcf
 from .functions_py.index import index_vcf
+from .functions_py.logger import logger_error
+
+try:
+    from .functions_py import sort
+except ImportError:
+    logger_error("No module named convert_rows_to_hail and sample_qc_analysis")
 
 
 current_dir = os.path.dirname(__file__)
