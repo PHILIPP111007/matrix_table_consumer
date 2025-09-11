@@ -1,4 +1,4 @@
-# MatrixTableConsumer v1.2.8
+# MatrixTableConsumer v1.2.9
 
 To install this package run (you need to have Go):
 

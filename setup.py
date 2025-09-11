@@ -80,7 +80,7 @@ ext_modules = [
 
 setup(
     name="matrix_table_consumer",
-    version="1.2.8",
+    version="1.2.9",
     author="Philipp Roschin",
     author_email="r.phil@yandex.ru",
     description="MatrixTableConsumer, which performs operations on the Hail MatrixTable.",
