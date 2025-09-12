@@ -322,7 +322,7 @@ class MatrixTableConsumer:
     def sample_qc_analysis(self, zarr_data: Array | Group) -> pd.DataFrame:
         """Sample quality analysis"""
 
-        df: pd.DataFrame = sample_qc_analysis.sample_qc_analysis_c(zarr_data=zarr_data)
+        df: pd.DataFrame = sample_qc_analysis.qc_analysis_c(zarr_data=zarr_data)
         return df
 
 
