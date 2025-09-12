@@ -2,9 +2,10 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 import warnings
+from tqdm import tqdm
 
 
-def run_gwas(zarr_data, phenotypes, covariates=None, chunk_size=5000):
+def run_gwas_c(zarr_data, phenotypes, covariates=None, chunk_size=5000):
     """Simplified GWAS using Zarr"""
 
     genotypes = zarr_data["call_genotype"]
@@ -34,7 +35,9 @@ def run_gwas(zarr_data, phenotypes, covariates=None, chunk_size=5000):
     # Предварительное вычисление (X_cov^T * X_cov)^-1 для эффективности
     X_cov_T_X_cov_inv = np.linalg.inv(X_cov.T @ X_cov)
 
+    progress_bar = tqdm(total=n_variants, desc="Processing chunks")
     for start in range(0, n_variants, chunk_size):
+
         end = min(start + chunk_size, n_variants)
         genotype_chunk = genotypes[start:end]
 
@@ -110,5 +113,7 @@ def run_gwas(zarr_data, phenotypes, covariates=None, chunk_size=5000):
                     f"Error processing variant {start + variant_idx}: {e}"
                 )
                 continue
-
+        
+        progress_bar.update(end - start)
+    progress_bar.close()
     return pd.DataFrame(gwas_results)

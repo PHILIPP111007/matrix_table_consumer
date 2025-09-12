@@ -329,7 +329,7 @@ class MatrixTableConsumer:
     def run_gwas(self, zarr_data: Array | Group, phenotypes, covariates=None, chunk_size: int = 5000) -> pd.DataFrame:
         """Sample quality analysis"""
 
-        df: pd.DataFrame = gwas.run_gwas(zarr_data=zarr_data, phenotypes=phenotypes, covariates=covariates, chunk_size=chunk_size)
+        df: pd.DataFrame = gwas.run_gwas_c(zarr_data=zarr_data, phenotypes=phenotypes, covariates=covariates, chunk_size=chunk_size)
 
         print(
             f"Of {len(df)} significant variants found (p < 0.05): {np.sum(df['p_value'] < 0.05)}"
