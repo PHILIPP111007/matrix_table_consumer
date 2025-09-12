@@ -114,6 +114,7 @@ setup(
         "bio2zarr[vcf]==0.1.6",
         "zarr==2.18.7",
         "pysam==0.23.3",
+        "scipy==1.16.1",
     ],
     classifiers=[
         "Programming Language :: Python :: 3",

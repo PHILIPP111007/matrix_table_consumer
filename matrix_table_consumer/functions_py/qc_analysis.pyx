@@ -153,8 +153,6 @@ def calculate_sample_metrics(args: tuple) -> dict[str, float]:
     }
 
 
-
-
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.initializedcheck(False)

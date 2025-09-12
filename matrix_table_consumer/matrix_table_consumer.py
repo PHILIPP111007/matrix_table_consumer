@@ -23,7 +23,7 @@ import pandas as pd
 from .functions_py.logger import logger_error, logger_info
 
 try:
-    from .functions_py import convert_rows_to_hail, qc_analysis
+    from .functions_py import convert_rows_to_hail, qc_analysis, gwas
 except ImportError:
     logger_error("No module named convert_rows_to_hail and sample_qc_analysis")
 
@@ -323,6 +323,18 @@ class MatrixTableConsumer:
         """Sample quality analysis"""
 
         df: pd.DataFrame = qc_analysis.qc_analysis_c(zarr_data=zarr_data, num_cpu=num_cpu)
+        return df
+
+
+    def run_gwas(self, zarr_data: Array | Group, phenotypes, covariates=None, chunk_size: int = 5000) -> pd.DataFrame:
+        """Sample quality analysis"""
+
+        df: pd.DataFrame = gwas.run_gwas(zarr_data=zarr_data, phenotypes=phenotypes, covariates=covariates, chunk_size=chunk_size)
+
+        print(
+            f"Of {len(df)} significant variants found (p < 0.05): {np.sum(df['p_value'] < 0.05)}"
+        )
+
         return df
 
 
