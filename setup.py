@@ -69,8 +69,8 @@ ext_modules = [
         define_macros=common_macros,
     ),
     Extension(
-        name="matrix_table_consumer.functions_py.sample_qc_analysis",
-        sources=["matrix_table_consumer/functions_py/sample_qc_analysis.pyx"],
+        name="matrix_table_consumer.functions_py.qc_analysis",
+        sources=["matrix_table_consumer/functions_py/qc_analysis.pyx"],
         language="c",
         extra_compile_args=compile_args,
         include_dirs=[np.get_include()],
@@ -96,7 +96,6 @@ setup(
     data_files=[
         ("", ["matrix_table_consumer/main.so"]),
         ("", ["matrix_table_consumer/main.h"]),
-        ("", ["matrix_table_consumer/functions_py/sample_qc_analysis.c"]),
     ],
     entry_points={
         "console_scripts": [
