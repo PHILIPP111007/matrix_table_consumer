@@ -80,7 +80,7 @@ func hashString(s string) uint32 {
 func readChunk(reader *bufio.Reader, size int) ([]VCFRecord, error) {
 	chunk := make([]VCFRecord, 0, size)
 
-	for i := 0; i < size; i++ {
+	for range size {
 		line, err := reader.ReadString('\n')
 		if err != nil {
 			if err == io.EOF {
@@ -121,7 +121,10 @@ func writeChunk(chunk []VCFRecord, filename string) error {
 	}
 	defer file.Close()
 
-	writer := bufio.NewWriter(file)
+	gzWriter := gzip.NewWriter(file)
+	defer gzWriter.Close()
+
+	writer := bufio.NewWriter(gzWriter)
 	defer writer.Flush()
 
 	for _, record := range chunk {
@@ -146,7 +149,13 @@ func mergeSortedFiles(filePaths []string, outputFile string) error {
 			return err
 		}
 		files[i] = file
-		readers[i] = bufio.NewReader(file)
+
+		gzReader, err := gzip.NewReader(file)
+		if err != nil {
+			return err
+		}
+		inputFile := gzReader
+		readers[i] = bufio.NewReader(inputFile)
 
 		line, err := readers[i].ReadString('\n')
 		if err != nil && err != io.EOF {
@@ -315,7 +324,12 @@ func Sort(inputVCF, outputVCF string, chunkSize int) {
 			return
 		}
 
-		loggerInfo("Saved chunk in %s", tempFile)
+		size, err := GetFileSizeMB(tempFile)
+		if err != nil {
+			loggerError("Error getting file size: %v", err)
+
+		}
+		loggerInfo("Saved chunk in %s %f Mb", tempFile, size)
 		tempFiles = append(tempFiles, tempFile)
 		chunkCount++
 	}
@@ -349,7 +363,14 @@ func Sort(inputVCF, outputVCF string, chunkSize int) {
 		}
 		defer tempFile.Close()
 
-		_, err = io.Copy(writer, tempFile)
+		gzReader, err := gzip.NewReader(tempFile)
+		if err != nil {
+			loggerError("Error creating gzip reader: %v", err)
+			return
+		}
+		defer gzReader.Close()
+
+		_, err = io.Copy(writer, gzReader)
 		if err != nil {
 			loggerError("Error copying temp file: %v", err)
 			return
@@ -372,7 +393,14 @@ func Sort(inputVCF, outputVCF string, chunkSize int) {
 		}
 		defer mergedFile.Close()
 
-		_, err = io.Copy(writer, mergedFile)
+		gzReader, err := gzip.NewReader(mergedFile)
+		if err != nil {
+			loggerError("Error creating gzip reader: %v", err)
+			return
+		}
+		defer gzReader.Close()
+
+		_, err = io.Copy(writer, gzReader)
 		if err != nil {
 			loggerError("Error copying merged file: %v", err)
 			return

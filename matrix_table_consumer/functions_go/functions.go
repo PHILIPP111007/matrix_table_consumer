@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 )
+import "os"
 
 func getTime() string {
 	return time.Now().Format("02-01-2006 15:04:05")
@@ -62,4 +63,16 @@ func GetScaner(reader *bufio.Reader) *bufio.Scanner {
 	buf := make([]byte, maxTokenSize)
 	scanner.Buffer(buf, maxTokenSize)
 	return scanner
+}
+
+func GetFileSizeMB(filename string) (float64, error) {
+	fileInfo, err := os.Stat(filename)
+	if err != nil {
+		return 0, err
+	}
+
+	sizeBytes := fileInfo.Size()
+	sizeMB := float64(sizeBytes) / (1024 * 1024)
+
+	return sizeMB, nil
 }
