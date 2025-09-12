@@ -319,10 +319,10 @@ class MatrixTableConsumer:
         data = zarr.open(vcz_path, mode="r")
         return data
 
-    def sample_qc_analysis(self, zarr_data: Array | Group) -> pd.DataFrame:
+    def sample_qc_analysis(self, zarr_data: Array | Group, num_cpu: int = 1) -> pd.DataFrame:
         """Sample quality analysis"""
 
-        df: pd.DataFrame = qc_analysis.qc_analysis_c(zarr_data=zarr_data)
+        df: pd.DataFrame = qc_analysis.qc_analysis_c(zarr_data=zarr_data, num_cpu=num_cpu)
         return df
 
 

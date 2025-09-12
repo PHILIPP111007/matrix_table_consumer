@@ -160,7 +160,7 @@ def calculate_sample_metrics(args: tuple) -> dict[str, float]:
 @cython.initializedcheck(False)
 @cython.cdivision(True)
 @cython.infer_types(True)
-def qc_analysis_c(zarr_data: Group) -> pd.DataFrame:
+def qc_analysis_c(zarr_data: Group, num_cpu: int) -> pd.DataFrame:
     """Sample quality analysis"""
 
     genotypes: Array = zarr_data["call_genotype"]
@@ -195,11 +195,11 @@ def qc_analysis_c(zarr_data: Group) -> pd.DataFrame:
 
     # Prepare arguments for each sample
     args_list = []
-    for sample_idx in range(10):
+    for sample_idx in range(n_samples):
         args_list.append((sample_idx, genotypes, ploidy, variant_alleles, sample_names, n_variants))
 
     # Use multiprocessing Pool
-    with multiprocessing.Pool(processes=3) as pool:
+    with multiprocessing.Pool(processes=num_cpu) as pool:
         results = pool.map(calculate_sample_metrics, args_list)
 
     # Collect results
