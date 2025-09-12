@@ -23,7 +23,7 @@ import pandas as pd
 from .functions_py.logger import logger_error, logger_info
 
 try:
-    from .functions_py import convert_rows_to_hail, sample_qc_analysis
+    from .functions_py import convert_rows_to_hail, qc_analysis
 except ImportError:
     logger_error("No module named convert_rows_to_hail and sample_qc_analysis")
 
@@ -322,7 +322,7 @@ class MatrixTableConsumer:
     def sample_qc_analysis(self, zarr_data: Array | Group) -> pd.DataFrame:
         """Sample quality analysis"""
 
-        df: pd.DataFrame = sample_qc_analysis.qc_analysis_c(zarr_data=zarr_data)
+        df: pd.DataFrame = qc_analysis.qc_analysis_c(zarr_data=zarr_data)
         return df
 
 
