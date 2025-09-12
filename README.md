@@ -125,6 +125,8 @@ vcf_tools -save_vcf_as_zarr \
 
 - `MatrixTableConsumer().sample_qc_analysis` sample quality analysis
 
+- `MatrixTableConsumer().run_gwas` run GWAS
+
 ## Tests
 
 To run tests, use:
