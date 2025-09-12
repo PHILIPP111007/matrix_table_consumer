@@ -76,6 +76,14 @@ ext_modules = [
         include_dirs=[np.get_include()],
         define_macros=common_macros,
     ),
+    Extension(
+        name="matrix_table_consumer.functions_py.gwas",
+        sources=["matrix_table_consumer/functions_py/gwas.pyx"],
+        language="c",
+        extra_compile_args=compile_args,
+        include_dirs=[np.get_include()],
+        define_macros=common_macros,
+    ),
 ]
 
 setup(

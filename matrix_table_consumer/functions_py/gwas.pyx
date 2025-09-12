@@ -1,4 +1,6 @@
 import numpy as np
+cimport numpy as np
+
 import pandas as pd
 from scipy import stats
 import warnings
