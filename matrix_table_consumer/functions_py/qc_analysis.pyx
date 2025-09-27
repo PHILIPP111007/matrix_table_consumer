@@ -190,15 +190,14 @@ def qc_analysis_c(zarr_data: Group, num_cpu: int) -> pd.DataFrame:
         "percent_diploid": [],
     }
 
-
     # Prepare arguments for each sample
-    args_list = []
+    args = []
     for sample_idx in range(n_samples):
-        args_list.append((sample_idx, genotypes, ploidy, variant_alleles, sample_names, n_variants))
+        args.append((sample_idx, genotypes, ploidy, variant_alleles, sample_names, n_variants))
 
     # Use multiprocessing Pool
     with multiprocessing.Pool(processes=num_cpu) as pool:
-        results = pool.map(calculate_sample_metrics, args_list)
+        results = pool.starmap(calculate_sample_metrics, args)
 
     # Collect results
     for result in results:
