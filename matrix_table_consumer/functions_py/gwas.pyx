@@ -15,10 +15,11 @@ from .logger import logger_info
 counter = multiprocessing.Value('i', 0)
 
 
-def process_chunk(genotypes: Group, n_variants: cython.long, n_samples: cython.long, variant_ids: Group, phenotypes: np.ndarray, chunk_size: cython.int, X_cov, X_cov_T_X_cov_inv, start: cython.long):
+def process_chunk(genotypes: Group, n_variants: cython.long, n_samples: cython.long, variant_ids: Group, variant_positions: Group, phenotypes: np.ndarray, chunk_size: cython.int, X_cov, X_cov_T_X_cov_inv, start: cython.long):
     end: cython.long
     end = min(start + chunk_size, n_variants)
     genotype_chunk: Group = genotypes[start:end]
+    result: list[dict] = []
 
     variant_idx: cython.long
     for variant_idx in range(genotype_chunk.shape[0]):
@@ -74,43 +75,46 @@ def process_chunk(genotypes: Group, n_variants: cython.long, n_samples: cython.l
             df = len(phenotypes) - X_cov.shape[1] - 1
             p_value: float = 2 * (1 - stats.t.cdf(abs(t_stat), df))
 
-            counter.value += end - start
-            logger_info(f"Processed: {counter.value} / {n_variants}")
-            return {
+            result.append({
                     "variant_index": start + variant_idx,
                     "variant_id": variant_ids[start + variant_idx],
+                    "variant_position": variant_positions[start + variant_idx],
                     "beta": beta,
                     "se": se,
                     "p_value": p_value,
                     "t_stat": t_stat,
                     "maf": np.mean(dosage) / 2,  # Minor allele frequency
-                }
-            
-
+                })
         except np.linalg.LinAlgError:
             # Пропускаем варианты
-            return {
+            result.append({
                     "variant_index": start + variant_idx,
                     "variant_id": variant_ids[start + variant_idx],
+                    "variant_position": variant_positions[start + variant_idx],
                     "beta": None,
                     "se": None,
                     "p_value": None,
                     "t_stat": None,
                     "maf": None,
-                }
+                })
         except Exception as e:
             warnings.warn(
                 f"Error processing variant {start + variant_idx}: {e}"
             )
-            return {
+            result.append({
                     "variant_index": start + variant_idx,
                     "variant_id": variant_ids[start + variant_idx],
+                    "variant_position": variant_positions[start + variant_idx],
                     "beta": None,
                     "se": None,
                     "p_value": None,
                     "t_stat": None,
                     "maf": None,
-                }
+                })
+    
+    counter.value += variant_idx
+    logger_info(f"Processed: {counter.value} / {n_variants}")
+    return result
 
 
 def run_gwas_c(zarr_data: Group, phenotypes: np.ndarray, covariates: np.ndarray = None, chunk_size: cython.int = 5000, num_cpu: int = 1):
@@ -118,6 +122,7 @@ def run_gwas_c(zarr_data: Group, phenotypes: np.ndarray, covariates: np.ndarray 
 
     genotypes: Group = zarr_data["call_genotype"]
     variant_ids: Group = zarr_data["variant_id"]
+    variant_positions = zarr_data["variant_position"]
     n_variants: cython.long = genotypes.shape[0]
     n_samples: cython.long = genotypes.shape[1]
 
@@ -142,14 +147,17 @@ def run_gwas_c(zarr_data: Group, phenotypes: np.ndarray, covariates: np.ndarray 
     # Предварительное вычисление (X_cov^T * X_cov)^-1 для эффективности
     X_cov_T_X_cov_inv: np.ndarray = np.linalg.inv(X_cov.T @ X_cov)
 
-
     range_list = list(range(0, n_variants, chunk_size))
-    args = [(genotypes, n_variants, n_samples, variant_ids, phenotypes, chunk_size, X_cov, X_cov_T_X_cov_inv, start) for start in range_list]
+    args = [(genotypes, n_variants, n_samples, variant_ids, variant_positions, phenotypes, chunk_size, X_cov, X_cov_T_X_cov_inv, start) for start in range_list]
     with multiprocessing.Pool(processes=num_cpu) as pool:
-        gwas_results = pool.starmap(process_chunk, args)
+        gwas_results_nested: list[list[dict]] = pool.starmap(process_chunk, args)
         pool.close()
         pool.join()
 
         counter.value = 0
+    
+    gwas_results: list[dict] = []
+    for lst in gwas_results_nested:
+        gwas_results.extend(lst)
 
     return pd.DataFrame(gwas_results)
