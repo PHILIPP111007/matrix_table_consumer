@@ -338,7 +338,7 @@ class MatrixTableConsumer:
 
 
     def run_gwas(self, zarr_data: Array | Group, phenotypes, covariates=None, chunk_size: int = 5000, num_cpu: int = 1) -> pd.DataFrame:
-        """Sample quality analysis"""
+        """Simplified GWAS using Zarr"""
 
         df: pd.DataFrame = gwas.run_gwas_c(zarr_data=zarr_data, phenotypes=phenotypes, covariates=covariates, chunk_size=chunk_size, num_cpu=num_cpu)
 
