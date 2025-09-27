@@ -1,4 +1,4 @@
-__version__ = "1.2.9"
+__version__ = "1.2.10"
 
 
 import os
@@ -24,9 +24,19 @@ import pandas as pd
 from .functions_py.logger import logger_error, logger_info
 
 try:
-    from .functions_py import convert_rows_to_hail, qc_analysis, gwas
+    from .functions_py import convert_rows_to_hail
 except ImportError:
-    logger_error("No module named convert_rows_to_hail and sample_qc_analysis")
+    logger_error("No module named convert_rows_to_hail")
+
+try:
+    from .functions_py import qc_analysis
+except ImportError:
+    logger_error("No module named qc_analysis")
+
+try:
+    from .functions_py import gwas
+except ImportError:
+    logger_error("No module named gwas")
 
 
 NUM_CPU = multiprocessing.cpu_count()
@@ -327,10 +337,10 @@ class MatrixTableConsumer:
         return df
 
 
-    def run_gwas(self, zarr_data: Array | Group, phenotypes, covariates=None, chunk_size: int = 5000) -> pd.DataFrame:
+    def run_gwas(self, zarr_data: Array | Group, phenotypes, covariates=None, chunk_size: int = 5000, num_cpu: int = 1) -> pd.DataFrame:
         """Sample quality analysis"""
 
-        df: pd.DataFrame = gwas.run_gwas_c(zarr_data=zarr_data, phenotypes=phenotypes, covariates=covariates, chunk_size=chunk_size)
+        df: pd.DataFrame = gwas.run_gwas_c(zarr_data=zarr_data, phenotypes=phenotypes, covariates=covariates, chunk_size=chunk_size, num_cpu=num_cpu)
 
         print(
             f"Of {len(df)} significant variants found (p < 0.05): {np.sum(df['p_value'] < 0.05)}"
